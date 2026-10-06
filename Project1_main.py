@@ -151,6 +151,53 @@ def evaluate_circuit(circuit, input_values):
     return {node: int(values[node]) for node in circuit["outputs"]}
 
 
+def collapsed_fault_list(circuit):
+    """Return gate-pin stuck-at faults after basic single-gate collapsing."""
+    faults = []
+    input_faults = {
+        "AND": 1,
+        "NAND": 1,
+        "OR": 0,
+        "NOR": 0,
+    }
+    output_faults = {
+        "AND": 0,
+        "NAND": 1,
+        "OR": 1,
+        "NOR": 0,
+    }
+
+    for gate in circuit["gates"]:
+        gate_type = gate["type"]
+        if gate_type in input_faults:
+            for index, node in enumerate(gate["inputs"], start=1):
+                faults.append(
+                    f"{gate['out']} input {index} ({node}) stuck-at-{input_faults[gate_type]}"
+                )
+            faults.append(
+                f"{gate['out']} output stuck-at-{output_faults[gate_type]}"
+            )
+        elif gate_type in {"NOT", "BUFF"}:
+            faults.extend(
+                (
+                    f"{gate['out']} output stuck-at-0",
+                    f"{gate['out']} output stuck-at-1",
+                )
+            )
+        else:  # XOR faults are retained at every input and output pin.
+            for index, node in enumerate(gate["inputs"], start=1):
+                for stuck_value in (0, 1):
+                    faults.append(
+                        f"{gate['out']} input {index} ({node}) "
+                        f"stuck-at-{stuck_value}"
+                    )
+            for stuck_value in (0, 1):
+                faults.append(
+                    f"{gate['out']} output stuck-at-{stuck_value}"
+                )
+    return faults
+
+
 def print_summary(circuit):
     inputs = circuit["inputs"]
     outputs = circuit["outputs"]
@@ -171,6 +218,13 @@ def print_summary(circuit):
         )
 
 
+def print_fault_list(circuit):
+    faults = collapsed_fault_list(circuit)
+    print(f"\nCollapsed stuck-at fault list ({len(faults)} faults):")
+    for fault in faults:
+        print(f"- {fault}")
+
+
 def parse_input_assignments(assignments, input_nodes):
     values = {}
     for assignment in assignments:
@@ -187,6 +241,27 @@ def parse_input_assignments(assignments, input_nodes):
             raise ValueError(f"Input '{node}' must be assigned 0 or 1")
         values[node] = int(value)
     return values
+
+
+def prompt_for_input_values(input_nodes):
+    if not input_nodes:
+        return {}
+    input_order = ", ".join(input_nodes)
+    while True:
+        try:
+            bit_string = input(
+                f"\nEnter one bit per input in this order ({input_order}): "
+            ).strip()
+        except EOFError as error:
+            raise ValueError("No test vector was entered") from error
+        if len(bit_string) == len(input_nodes) and all(
+            bit in {"0", "1"} for bit in bit_string
+        ):
+            return {
+                node: int(bit)
+                for node, bit in zip(input_nodes, bit_string)
+            }
+        print(f"Enter exactly {len(input_nodes)} bits using only 0 and 1.")
 
 
 def print_truth_table(circuit):
@@ -224,26 +299,30 @@ def main():
         action="store_true",
         help="evaluate every possible input combination (up to 16 inputs)",
     )
+    argument_parser.add_argument(
+        "--fault-list",
+        action="store_true",
+        help="print the gate-pin stuck-at fault list after basic fault collapsing",
+    )
     arguments = argument_parser.parse_args()
 
     try:
         circuit = parse_bench(arguments.circuit_file)
         print_summary(circuit)
+        if arguments.fault_list:
+            print_fault_list(circuit)
         if arguments.truth_table:
             print_truth_table(circuit)
-        elif arguments.input:
-            input_values = parse_input_assignments(
-                arguments.input, circuit["inputs"]
+        else:
+            input_values = (
+                parse_input_assignments(arguments.input, circuit["inputs"])
+                if arguments.input
+                else prompt_for_input_values(circuit["inputs"])
             )
             output_values = evaluate_circuit(circuit, input_values)
             print("\nOutput values:")
             for node, value in output_values.items():
                 print(f"{node} = {value}")
-        elif circuit["inputs"]:
-            print(
-                "\nTo evaluate this circuit, provide every input with --input "
-                "NAME=BIT, or use --truth-table."
-            )
     except (OSError, ValueError) as error:
         print(f"Error: {error}", file=sys.stderr)
         return 2
