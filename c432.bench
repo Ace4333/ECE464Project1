@@ -1,211 +1,391 @@
-# c432
-# 36 inputs
-# 7 outputs
-# 40 inverters
-# 120 gates ( 4 ANDs + 119 NANDs + 19 NORs + 18 XORs )
+import argparse
+import re
+import sys
+from collections import deque, defaultdict
+from itertools import product
 
-INPUT(1)
-INPUT(4)
-INPUT(8)
-INPUT(11)
-INPUT(14)
-INPUT(17)
-INPUT(21)
-INPUT(24)
-INPUT(27)
-INPUT(30)
-INPUT(34)
-INPUT(37)
-INPUT(40)
-INPUT(43)
-INPUT(47)
-INPUT(50)
-INPUT(53)
-INPUT(56)
-INPUT(60)
-INPUT(63)
-INPUT(66)
-INPUT(69)
-INPUT(73)
-INPUT(76)
-INPUT(79)
-INPUT(82)
-INPUT(86)
-INPUT(89)
-INPUT(92)
-INPUT(95)
-INPUT(99)
-INPUT(102)
-INPUT(105)
-INPUT(108)
-INPUT(112)
-INPUT(115)
+IDENTIFIER = r"[\w']+"
+INPUT_PATTERN = re.compile(rf"INPUT\s*\(\s*({IDENTIFIER})\s*\)", re.IGNORECASE)
+OUTPUT_PATTERN = re.compile(rf"OUTPUT\s*\(\s*({IDENTIFIER})\s*\)", re.IGNORECASE)
+GATE_PATTERN = re.compile(rf"({IDENTIFIER})\s*=\s*(\w+)\s*\((.*?)\)", re.IGNORECASE)
 
-OUTPUT(223)
-OUTPUT(329)
-OUTPUT(370)
-OUTPUT(421)
-OUTPUT(430)
-OUTPUT(431)
-OUTPUT(432)
+SUPPORTED_GATES = {"AND", "BUFF", "NAND", "NOR", "NOT", "OR", "XOR"}
+MAX_TRUTH_TABLE_INPUTS = 16
 
-118 = NOT(1)
-119 = NOT(4)
-122 = NOT(11)
-123 = NOT(17)
-126 = NOT(24)
-127 = NOT(30)
-130 = NOT(37)
-131 = NOT(43)
-134 = NOT(50)
-135 = NOT(56)
-138 = NOT(63)
-139 = NOT(69)
-142 = NOT(76)
-143 = NOT(82)
-146 = NOT(89)
-147 = NOT(95)
-150 = NOT(102)
-151 = NOT(108)
-154 = NAND(118, 4)
-157 = NOR(8, 119)
-158 = NOR(14, 119)
-159 = NAND(122, 17)
-162 = NAND(126, 30)
-165 = NAND(130, 43)
-168 = NAND(134, 56)
-171 = NAND(138, 69)
-174 = NAND(142, 82)
-177 = NAND(146, 95)
-180 = NAND(150, 108)
-183 = NOR(21, 123)
-184 = NOR(27, 123)
-185 = NOR(34, 127)
-186 = NOR(40, 127)
-187 = NOR(47, 131)
-188 = NOR(53, 131)
-189 = NOR(60, 135)
-190 = NOR(66, 135)
-191 = NOR(73, 139)
-192 = NOR(79, 139)
-193 = NOR(86, 143)
-194 = NOR(92, 143)
-195 = NOR(99, 147)
-196 = NOR(105, 147)
-197 = NOR(112, 151)
-198 = NOR(115, 151)
-199 = AND(154, 159, 162, 165, 168, 171, 174, 177, 180)
-203 = NOT(199)
-213 = NOT(199)
-223 = NOT(199)
-224 = XOR(203, 154)
-227 = XOR(203, 159)
-230 = XOR(203, 162)
-233 = XOR(203, 165)
-236 = XOR(203, 168)
-239 = XOR(203, 171)
-242 = NAND(1, 213)
-243 = XOR(203, 174)
-246 = NAND(213, 11)
-247 = XOR(203, 177)
-250 = NAND(213, 24)
-251 = XOR(203, 180)
-254 = NAND(213, 37)
-255 = NAND(213, 50)
-256 = NAND(213, 63)
-257 = NAND(213, 76)
-258 = NAND(213, 89)
-259 = NAND(213, 102)
-260 = NAND(224, 157)
-263 = NAND(224, 158)
-264 = NAND(227, 183)
-267 = NAND(230, 185)
-270 = NAND(233, 187)
-273 = NAND(236, 189)
-276 = NAND(239, 191)
-279 = NAND(243, 193)
-282 = NAND(247, 195)
-285 = NAND(251, 197)
-288 = NAND(227, 184)
-289 = NAND(230, 186)
-290 = NAND(233, 188)
-291 = NAND(236, 190)
-292 = NAND(239, 192)
-293 = NAND(243, 194)
-294 = NAND(247, 196)
-295 = NAND(251, 198)
-296 = AND(260, 264, 267, 270, 273, 276, 279, 282, 285)
-300 = NOT(263)
-301 = NOT(288)
-302 = NOT(289)
-303 = NOT(290)
-304 = NOT(291)
-305 = NOT(292)
-306 = NOT(293)
-307 = NOT(294)
-308 = NOT(295)
-309 = NOT(296)
-319 = NOT(296)
-329 = NOT(296)
-330 = XOR(309, 260)
-331 = XOR(309, 264)
-332 = XOR(309, 267)
-333 = XOR(309, 270)
-334 = NAND(8, 319)
-335 = XOR(309, 273)
-336 = NAND(319, 21)
-337 = XOR(309, 276)
-338 = NAND(319, 34)
-339 = XOR(309, 279)
-340 = NAND(319, 47)
-341 = XOR(309, 282)
-342 = NAND(319, 60)
-343 = XOR(309, 285)
-344 = NAND(319, 73)
-345 = NAND(319, 86)
-346 = NAND(319, 99)
-347 = NAND(319, 112)
-348 = NAND(330, 300)
-349 = NAND(331, 301)
-350 = NAND(332, 302)
-351 = NAND(333, 303)
-352 = NAND(335, 304)
-353 = NAND(337, 305)
-354 = NAND(339, 306)
-355 = NAND(341, 307)
-356 = NAND(343, 308)
-357 = AND(348, 349, 350, 351, 352, 353, 354, 355, 356)
-360 = NOT(357)
-370 = NOT(357)
-371 = NAND(14, 360)
-372 = NAND(360, 27)
-373 = NAND(360, 40)
-374 = NAND(360, 53)
-375 = NAND(360, 66)
-376 = NAND(360, 79)
-377 = NAND(360, 92)
-378 = NAND(360, 105)
-379 = NAND(360, 115)
-380 = NAND(4, 242, 334, 371)
-381 = NAND(246, 336, 372, 17)
-386 = NAND(250, 338, 373, 30)
-393 = NAND(254, 340, 374, 43)
-399 = NAND(255, 342, 375, 56)
-404 = NAND(256, 344, 376, 69)
-407 = NAND(257, 345, 377, 82)
-411 = NAND(258, 346, 378, 95)
-414 = NAND(259, 347, 379, 108)
-415 = NOT(380)
-416 = AND(381, 386, 393, 399, 404, 407, 411, 414)
-417 = NOT(393)
-418 = NOT(404)
-419 = NOT(407)
-420 = NOT(411)
-421 = NOR(415, 416)
-422 = NAND(386, 417)
-425 = NAND(386, 393, 418, 399)
-428 = NAND(399, 393, 419)
-429 = NAND(386, 393, 407, 420)
-430 = NAND(381, 386, 422, 399)
-431 = NAND(381, 386, 425, 428)
-432 = NAND(381, 422, 425, 429)
+
+class Circuit:
+    """Holds the parsed structure of the combinational circuit using integer IDs."""
+    def __init__(self):
+        self.node_to_id = {}
+        self.id_to_node = []
+        self.inputs = []
+        self.outputs = []
+        self.gates = []
+        self.sorted_gates = []
+
+    def get_id(self, name):
+        """Map a string node name to a sequential integer ID."""
+        if name not in self.node_to_id:
+            self.node_to_id[name] = len(self.id_to_node)
+            self.id_to_node.append(name)
+        return self.node_to_id[name]
+
+    def get_name(self, node_id):
+        """Retrieve the original string name of a node."""
+        return self.id_to_node[node_id]
+
+
+def parse_bench(file_path):
+    """Parse a BENCH netlist and perform iterative topological sorting."""
+    circuit = Circuit()
+    inputs_set = set()
+    outputs_set = set()
+    gate_by_out = {}
+
+    with open(file_path, "r", encoding="utf-8") as bench_file:
+        for line_number, raw_line in enumerate(bench_file, start=1):
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+
+            input_match = INPUT_PATTERN.fullmatch(line)
+            if input_match:
+                node_name = input_match.group(1)
+                if node_name in inputs_set:
+                    raise ValueError(f"Line {line_number}: duplicate input '{node_name}'")
+                inputs_set.add(node_name)
+                circuit.inputs.append(circuit.get_id(node_name))
+                continue
+
+            output_match = OUTPUT_PATTERN.fullmatch(line)
+            if output_match:
+                node_name = output_match.group(1)
+                if node_name in outputs_set:
+                    raise ValueError(f"Line {line_number}: duplicate output '{node_name}'")
+                outputs_set.add(node_name)
+                circuit.outputs.append(circuit.get_id(node_name))
+                continue
+
+            gate_match = GATE_PATTERN.fullmatch(line)
+            if gate_match:
+                out_name = gate_match.group(1)
+                gate_type = gate_match.group(2).upper()
+                gate_input_names = [n.strip() for n in gate_match.group(3).split(",") if n.strip()]
+
+                if gate_type not in SUPPORTED_GATES:
+                    raise ValueError(f"Line {line_number}: unsupported gate '{gate_type}'")
+                if not gate_input_names:
+                    raise ValueError(f"Line {line_number}: gate '{out_name}' has no inputs")
+                if gate_type in {"NOT", "BUFF"} and len(gate_input_names) != 1:
+                    raise ValueError(
+                        f"Line {line_number}: {gate_type} gate '{out_name}' "
+                        "must have exactly one input"
+                    )
+
+                out_id = circuit.get_id(out_name)
+                if out_name in inputs_set or out_id in gate_by_out:
+                    raise ValueError(f"Node '{out_name}' has multiple definitions")
+
+                in_ids = [circuit.get_id(n) for n in gate_input_names]
+                gate = {
+                    "out": out_id,
+                    "type": gate_type,
+                    "inputs": in_ids,
+                    "count": len(in_ids),
+                }
+                circuit.gates.append(gate)
+                gate_by_out[out_id] = gate
+                continue
+
+            raise ValueError(f"Line {line_number}: could not parse '{line}'")
+
+    defined_nodes = set(circuit.inputs) | set(gate_by_out.keys())
+    undefined = [
+        circuit.get_name(i) for i in range(len(circuit.id_to_node))
+        if i not in defined_nodes
+    ]
+    if undefined:
+        raise ValueError(f"Nodes used but never defined: {', '.join(undefined)}")
+
+    num_nodes = len(circuit.id_to_node)
+    in_degree = [0] * num_nodes
+    adj_list = [[] for _ in range(num_nodes)]
+
+    for gate in circuit.gates:
+        out_id = gate["out"]
+        for in_id in gate["inputs"]:
+            adj_list[in_id].append(out_id)
+            in_degree[out_id] += 1
+
+    levels = [0] * num_nodes
+    queue = deque([i for i in range(num_nodes) if in_degree[i] == 0])
+    
+    visited_count = 0
+    while queue:
+        curr = queue.popleft()
+        visited_count += 1
+
+        if curr in gate_by_out:
+            gate = gate_by_out[curr]
+            gate["level"] = levels[curr]
+            circuit.sorted_gates.append(gate)
+
+        for neighbor in adj_list[curr]:
+            in_degree[neighbor] -= 1
+            levels[neighbor] = max(levels[neighbor], levels[curr] + 1)
+            if in_degree[neighbor] == 0:
+                queue.append(neighbor)
+
+    if visited_count != num_nodes:
+        raise ValueError("Circuit contains a combinational loop (cycle)")
+
+    return circuit
+
+
+def evaluate_circuit(circuit, input_values, num_bits=1):
+    missing = [circuit.get_name(i) for i in circuit.inputs if i not in input_values]
+    if missing:
+        raise ValueError(f"Missing input values for: {', '.join(missing)}")
+
+    values = [0] * len(circuit.id_to_node)
+    for in_id, val in input_values.items():
+        values[in_id] = val
+
+    mask = (1 << num_bits) - 1
+
+    for gate in circuit.sorted_gates:
+        g_type = gate["type"]
+        ins = gate["inputs"]
+        
+        if g_type == "AND":
+            res = values[ins[0]]
+            for idx in ins[1:]: res &= values[idx]
+        elif g_type == "OR":
+            res = values[ins[0]]
+            for idx in ins[1:]: res |= values[idx]
+        elif g_type == "NAND":
+            res = values[ins[0]]
+            for idx in ins[1:]: res &= values[idx]
+            res = (~res) & mask
+        elif g_type == "NOR":
+            res = values[ins[0]]
+            for idx in ins[1:]: res |= values[idx]
+            res = (~res) & mask
+        elif g_type == "XOR":
+            res = values[ins[0]]
+            for idx in ins[1:]: res ^= values[idx]
+        elif g_type == "NOT":
+            res = (~values[ins[0]]) & mask
+        else:  # BUFF
+            res = values[ins[0]]
+            
+        values[gate["out"]] = res
+
+    return {out_id: values[out_id] for out_id in circuit.outputs}
+
+
+def collapsed_fault_list(circuit):
+    """Return total faults and a list of formatted, collapsed fault strings grouped by node."""
+    fault_lines = []
+    total_faults = 0
+
+    # Group faults for primary inputs
+    for n in circuit.inputs:
+        name = circuit.get_name(n)
+        fault_lines.append(f"INPUT({name}): sa0, sa1")
+        total_faults += 2
+
+    input_faults = {"AND": 1, "NAND": 1, "OR": 0, "NOR": 0}
+    output_faults = {"AND": 0, "NAND": 1, "OR": 1, "NOR": 0}
+
+    # Group faults per gate
+    for gate in circuit.sorted_gates:
+        g_type = gate["type"]
+        out_name = circuit.get_name(gate["out"])
+        gate_faults = []
+
+        if g_type in input_faults:
+            for i, in_id in enumerate(gate["inputs"], start=1):
+                in_name = circuit.get_name(in_id)
+                gate_faults.append(f"input {i}({in_name}) - sa{input_faults[g_type]}")
+                total_faults += 1
+            gate_faults.append(f"output - sa{output_faults[g_type]}")
+            total_faults += 1
+            
+        elif g_type in {"NOT", "BUFF"}:
+            gate_faults.extend(["output - sa0", "output - sa1"])
+            total_faults += 2
+            
+        else:  # XOR faults are retained at every pin
+            for i, in_id in enumerate(gate["inputs"], start=1):
+                in_name = circuit.get_name(in_id)
+                gate_faults.extend([f"input {i}({in_name}) - sa0", f"input {i}({in_name}) - sa1"])
+                total_faults += 2
+            gate_faults.extend(["output - sa0", "output - sa1"])
+            total_faults += 2
+
+        fault_lines.append(f"{out_name}: {', '.join(gate_faults)}")
+
+    # Group faults for primary outputs
+    for n in circuit.outputs:
+        name = circuit.get_name(n)
+        fault_lines.append(f"OUTPUT({name}): sa0, sa1")
+        total_faults += 2
+
+    return total_faults, fault_lines
+
+
+def print_summary(circuit):
+    input_names = [circuit.get_name(i) for i in circuit.inputs]
+    output_names = [circuit.get_name(i) for i in circuit.outputs]
+    print("--- Circuit Benchmark Summary ---")
+    print(f"Inputs  ({len(input_names)}): {', '.join(input_names)}")
+    print(f"Outputs ({len(output_names)}): {', '.join(output_names)}")
+    
+    print("\nNodes by Level:")
+    outputs_set = set(circuit.outputs)
+    
+    # Process Level 0 (Inputs)
+    print("Level 0:")
+    for node_id in circuit.inputs:
+        output_label = " (OUTPUT)" if node_id in outputs_set else ""
+        print(f"  {circuit.get_name(node_id)}: INPUT{output_label}")
+        
+    # Group remaining gates by their topological level
+    level_groups = defaultdict(list)
+    for gate in circuit.sorted_gates:
+        lvl = gate["level"]
+        out_lbl = " (OUTPUT)" if gate["out"] in outputs_set else ""
+        gate_inputs = ", ".join(circuit.get_name(i) for i in gate["inputs"])
+        node_str = f"{circuit.get_name(gate['out'])}: {gate['count']}-input {gate['type']} of {gate_inputs}{out_lbl}"
+        level_groups[lvl].append(node_str)
+        
+    # Print grouped levels
+    for lvl in sorted(level_groups.keys()):
+        print(f"\nLevel {lvl}:")
+        for node_str in level_groups[lvl]:
+            print(f"  {node_str}")
+
+
+def print_truth_table(circuit):
+    num_inputs = len(circuit.inputs)
+    if num_inputs > MAX_TRUTH_TABLE_INPUTS:
+        raise ValueError(
+            f"Truth table would require 2^{num_inputs} rows; limit is {MAX_TRUTH_TABLE_INPUTS} inputs."
+        )
+
+    total_rows = 1 << num_inputs
+    input_values = {}
+
+    for i, in_id in enumerate(circuit.inputs):
+        chunk_size = 1 << (num_inputs - 1 - i)
+        pattern = ((1 << chunk_size) - 1) << chunk_size
+        repeats = total_rows // (2 * chunk_size)
+        col_val = 0
+        for _ in range(repeats):
+            col_val = (col_val << (2 * chunk_size)) | pattern
+        input_values[in_id] = col_val
+
+    output_values = evaluate_circuit(circuit, input_values, num_bits=total_rows)
+
+    merged_values = {**input_values, **output_values}
+    headings = [circuit.get_name(i) for i in circuit.inputs + circuit.outputs]
+    
+    print("\nTruth table:")
+    print(" ".join(headings))
+    
+    for row in range(total_rows):
+        row_strs = []
+        for node_id in circuit.inputs + circuit.outputs:
+            bit = (merged_values[node_id] >> row) & 1
+            row_strs.append(str(bit))
+        print(" ".join(row_strs))
+
+
+def parse_input_assignments(assignments, circuit):
+    values = {}
+    input_names = {circuit.get_name(i) for i in circuit.inputs}
+    
+    for assignment in assignments:
+        if "=" not in assignment:
+            raise ValueError(f"Invalid input '{assignment}'; expected NAME=0 or NAME=1")
+        node_name, value = assignment.split("=", 1)
+        if node_name not in input_names:
+            raise ValueError(f"Unknown input '{node_name}'")
+            
+        node_id = circuit.get_id(node_name)
+        if node_id in values:
+            raise ValueError(f"Input '{node_name}' was assigned more than once")
+        if value not in {"0", "1"}:
+            raise ValueError(f"Input '{node_name}' must be assigned 0 or 1")
+        values[node_id] = int(value)
+    return values
+
+
+def prompt_for_input_values(circuit):
+    if not circuit.inputs:
+        return {}
+    input_names = [circuit.get_name(i) for i in circuit.inputs]
+    input_order = ", ".join(input_names)
+    
+    while True:
+        try:
+            bit_string = input(f"\nEnter one bit per input in this order ({input_order}): ").strip()
+        except EOFError as error:
+            raise ValueError("No test vector was entered") from error
+            
+        if len(bit_string) == len(circuit.inputs) and all(bit in {"0", "1"} for bit in bit_string):
+            return {
+                circuit.get_id(name): int(bit)
+                for name, bit in zip(input_names, bit_string)
+            }
+        print(f"Enter exactly {len(circuit.inputs)} bits using only 0 and 1.")
+
+
+def main():
+    argument_parser = argparse.ArgumentParser(description="Parse and evaluate a combinational BENCH circuit.")
+    argument_parser.add_argument("circuit_file", help="path to a .bench file")
+    evaluation = argument_parser.add_mutually_exclusive_group()
+    evaluation.add_argument(
+        "--input", action="append", default=[], metavar="NAME=BIT",
+        help="input assignment (repeat once per input to evaluate the circuit)",
+    )
+    evaluation.add_argument(
+        "--truth-table", action="store_true",
+        help="evaluate every possible input combination (up to 16 inputs)",
+    )
+    argument_parser.add_argument(
+        "--fault-list", action="store_true",
+        help="print the gate-pin stuck-at fault list after basic fault collapsing",
+    )
+    arguments = argument_parser.parse_args()
+
+    try:
+        circuit = parse_bench(arguments.circuit_file)
+        print_summary(circuit)
+        
+        if arguments.fault_list:
+            total_faults, fault_lines = collapsed_fault_list(circuit)
+            print(f"\nCollapsed stuck-at fault list ({total_faults} total faults):")
+            for line in fault_lines:
+                print(f"- {line}")
+                
+        if arguments.truth_table:
+            print_truth_table(circuit)
+        else:
+            input_values = (
+                parse_input_assignments(arguments.input, circuit)
+                if arguments.input else prompt_for_input_values(circuit)
+            )
+            output_values = evaluate_circuit(circuit, input_values, num_bits=1)
+            print("\nOutput values:")
+            for out_id in circuit.outputs:
+                print(f"{circuit.get_name(out_id)} = {output_values[out_id]}")
+                
+    except (OSError, ValueError) as error:
+        print(f"Error: {error}", file=sys.stderr)
+        return 2
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

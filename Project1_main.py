@@ -1,24 +1,46 @@
 import argparse
-from itertools import product
 import re
 import sys
-
+from collections import deque, defaultdict
+from itertools import product
 
 IDENTIFIER = r"[\w']+"
 INPUT_PATTERN = re.compile(rf"INPUT\s*\(\s*({IDENTIFIER})\s*\)", re.IGNORECASE)
 OUTPUT_PATTERN = re.compile(rf"OUTPUT\s*\(\s*({IDENTIFIER})\s*\)", re.IGNORECASE)
-GATE_PATTERN = re.compile(
-    rf"({IDENTIFIER})\s*=\s*(\w+)\s*\((.*?)\)", re.IGNORECASE
-)
+GATE_PATTERN = re.compile(rf"({IDENTIFIER})\s*=\s*(\w+)\s*\((.*?)\)", re.IGNORECASE)
+
 SUPPORTED_GATES = {"AND", "BUFF", "NAND", "NOR", "NOT", "OR", "XOR"}
 MAX_TRUTH_TABLE_INPUTS = 16
 
 
+class Circuit:
+    """Holds the parsed structure of the combinational circuit using integer IDs."""
+    def __init__(self):
+        self.node_to_id = {}
+        self.id_to_node = []
+        self.inputs = []
+        self.outputs = []
+        self.gates = []
+        self.sorted_gates = []
+
+    def get_id(self, name):
+        """Map a string node name to a sequential integer ID."""
+        if name not in self.node_to_id:
+            self.node_to_id[name] = len(self.id_to_node)
+            self.id_to_node.append(name)
+        return self.node_to_id[name]
+
+    def get_name(self, node_id):
+        """Retrieve the original string name of a node."""
+        return self.id_to_node[node_id]
+
+
 def parse_bench(file_path):
-    """Parse a BENCH netlist and return its inputs, outputs, and ordered gates."""
-    inputs = []
-    outputs = []
-    gates = []
+    """Parse a BENCH netlist and perform iterative topological sorting."""
+    circuit = Circuit()
+    inputs_set = set()
+    outputs_set = set()
+    gate_by_out = {}
 
     with open(file_path, "r", encoding="utf-8") as bench_file:
         for line_number, raw_line in enumerate(bench_file, start=1):
@@ -28,289 +50,312 @@ def parse_bench(file_path):
 
             input_match = INPUT_PATTERN.fullmatch(line)
             if input_match:
-                node = input_match.group(1)
-                if node in inputs:
-                    raise ValueError(f"Line {line_number}: duplicate input '{node}'")
-                inputs.append(node)
+                node_name = input_match.group(1)
+                if node_name in inputs_set:
+                    raise ValueError(f"Line {line_number}: duplicate input '{node_name}'")
+                inputs_set.add(node_name)
+                circuit.inputs.append(circuit.get_id(node_name))
                 continue
 
             output_match = OUTPUT_PATTERN.fullmatch(line)
             if output_match:
-                node = output_match.group(1)
-                if node in outputs:
-                    raise ValueError(f"Line {line_number}: duplicate output '{node}'")
-                outputs.append(node)
+                node_name = output_match.group(1)
+                if node_name in outputs_set:
+                    raise ValueError(f"Line {line_number}: duplicate output '{node_name}'")
+                outputs_set.add(node_name)
+                circuit.outputs.append(circuit.get_id(node_name))
                 continue
 
             gate_match = GATE_PATTERN.fullmatch(line)
             if gate_match:
-                out_node = gate_match.group(1)
+                out_name = gate_match.group(1)
                 gate_type = gate_match.group(2).upper()
-                gate_inputs = [
-                    node.strip()
-                    for node in gate_match.group(3).split(",")
-                    if node.strip()
-                ]
+                gate_input_names = [n.strip() for n in gate_match.group(3).split(",") if n.strip()]
+
                 if gate_type not in SUPPORTED_GATES:
+                    raise ValueError(f"Line {line_number}: unsupported gate '{gate_type}'")
+                if not gate_input_names:
+                    raise ValueError(f"Line {line_number}: gate '{out_name}' has no inputs")
+                if gate_type in {"NOT", "BUFF"} and len(gate_input_names) != 1:
                     raise ValueError(
-                        f"Line {line_number}: unsupported gate type '{gate_type}'"
-                    )
-                if not gate_inputs:
-                    raise ValueError(
-                        f"Line {line_number}: gate '{out_node}' has no inputs"
-                    )
-                if gate_type in {"NOT", "BUFF"} and len(gate_inputs) != 1:
-                    raise ValueError(
-                        f"Line {line_number}: {gate_type} gate '{out_node}' "
+                        f"Line {line_number}: {gate_type} gate '{out_name}' "
                         "must have exactly one input"
                     )
-                gates.append(
-                    {
-                        "out": out_node,
-                        "type": gate_type,
-                        "inputs": gate_inputs,
-                        "count": len(gate_inputs),
-                    }
-                )
+
+                out_id = circuit.get_id(out_name)
+                if out_name in inputs_set or out_id in gate_by_out:
+                    raise ValueError(f"Node '{out_name}' has multiple definitions")
+
+                in_ids = [circuit.get_id(n) for n in gate_input_names]
+                gate = {
+                    "out": out_id,
+                    "type": gate_type,
+                    "inputs": in_ids,
+                    "count": len(in_ids),
+                }
+                circuit.gates.append(gate)
+                gate_by_out[out_id] = gate
                 continue
 
             raise ValueError(f"Line {line_number}: could not parse '{line}'")
 
-    gate_by_output = {}
-    for gate in gates:
-        node = gate["out"]
-        if node in inputs or node in gate_by_output:
-            raise ValueError(f"Node '{node}' has multiple definitions")
-        gate_by_output[node] = gate
+    defined_nodes = set(circuit.inputs) | set(gate_by_out.keys())
+    undefined = [
+        circuit.get_name(i) for i in range(len(circuit.id_to_node))
+        if i not in defined_nodes
+    ]
+    if undefined:
+        raise ValueError(f"Nodes used but never defined: {', '.join(undefined)}")
 
-    node_levels = {node: 0 for node in inputs}
+    num_nodes = len(circuit.id_to_node)
+    in_degree = [0] * num_nodes
+    adj_list = [[] for _ in range(num_nodes)]
 
-    def get_level(node, visiting):
-        if node in node_levels:
-            return node_levels[node]
-        if node not in gate_by_output:
-            raise ValueError(f"Node '{node}' is used but never defined")
-        if node in visiting:
-            raise ValueError(f"Cycle detected while finding level for '{node}'")
+    for gate in circuit.gates:
+        out_id = gate["out"]
+        for in_id in gate["inputs"]:
+            adj_list[in_id].append(out_id)
+            in_degree[out_id] += 1
 
-        visiting.add(node)
-        gate = gate_by_output[node]
-        input_levels = [get_level(input_node, visiting) for input_node in gate["inputs"]]
-        visiting.remove(node)
-        node_levels[node] = 1 + max(input_levels)
-        return node_levels[node]
+    levels = [0] * num_nodes
+    queue = deque([i for i in range(num_nodes) if in_degree[i] == 0])
+    
+    visited_count = 0
+    while queue:
+        curr = queue.popleft()
+        visited_count += 1
 
-    for gate in gates:
-        gate["level"] = get_level(gate["out"], set())
-    for output in outputs:
-        get_level(output, set())
+        if curr in gate_by_out:
+            gate = gate_by_out[curr]
+            gate["level"] = levels[curr]
+            circuit.sorted_gates.append(gate)
 
-    gates.sort(key=lambda gate: gate["level"])
-    return {"inputs": inputs, "outputs": outputs, "gates": gates}
+        for neighbor in adj_list[curr]:
+            in_degree[neighbor] -= 1
+            levels[neighbor] = max(levels[neighbor], levels[curr] + 1)
+            if in_degree[neighbor] == 0:
+                queue.append(neighbor)
+
+    if visited_count != num_nodes:
+        raise ValueError("Circuit contains a combinational loop (cycle)")
+
+    return circuit
 
 
-def evaluate_circuit(circuit, input_values):
-    """Evaluate a parsed circuit for one complete assignment of input bits."""
-    inputs = circuit["inputs"]
-    missing = [node for node in inputs if node not in input_values]
-    extra = [node for node in input_values if node not in inputs]
-    if missing or extra:
-        details = []
-        if missing:
-            details.append(f"missing input values for: {', '.join(missing)}")
-        if extra:
-            details.append(f"unknown inputs: {', '.join(extra)}")
-        raise ValueError("; ".join(details))
+def evaluate_circuit(circuit, input_values, num_bits=1):
+    missing = [circuit.get_name(i) for i in circuit.inputs if i not in input_values]
+    if missing:
+        raise ValueError(f"Missing input values for: {', '.join(missing)}")
 
-    values = {}
-    for node in inputs:
-        value = input_values[node]
-        if not isinstance(value, (bool, int)) or value not in (0, 1):
-            raise ValueError(f"Input '{node}' must be 0 or 1, not {value!r}")
-        values[node] = bool(value)
+    values = [0] * len(circuit.id_to_node)
+    for in_id, val in input_values.items():
+        values[in_id] = val
 
-    for gate in circuit["gates"]:
-        gate_inputs = [values[node] for node in gate["inputs"]]
-        gate_type = gate["type"]
-        if gate_type == "AND":
-            result = all(gate_inputs)
-        elif gate_type == "NAND":
-            result = not all(gate_inputs)
-        elif gate_type == "OR":
-            result = any(gate_inputs)
-        elif gate_type == "NOR":
-            result = not any(gate_inputs)
-        elif gate_type == "XOR":
-            result = sum(gate_inputs) % 2 == 1
-        elif gate_type == "NOT":
-            result = not gate_inputs[0]
+    mask = (1 << num_bits) - 1
+
+    for gate in circuit.sorted_gates:
+        g_type = gate["type"]
+        ins = gate["inputs"]
+        
+        if g_type == "AND":
+            res = values[ins[0]]
+            for idx in ins[1:]: res &= values[idx]
+        elif g_type == "OR":
+            res = values[ins[0]]
+            for idx in ins[1:]: res |= values[idx]
+        elif g_type == "NAND":
+            res = values[ins[0]]
+            for idx in ins[1:]: res &= values[idx]
+            res = (~res) & mask
+        elif g_type == "NOR":
+            res = values[ins[0]]
+            for idx in ins[1:]: res |= values[idx]
+            res = (~res) & mask
+        elif g_type == "XOR":
+            res = values[ins[0]]
+            for idx in ins[1:]: res ^= values[idx]
+        elif g_type == "NOT":
+            res = (~values[ins[0]]) & mask
         else:  # BUFF
-            result = gate_inputs[0]
-        values[gate["out"]] = result
+            res = values[ins[0]]
+            
+        values[gate["out"]] = res
 
-    return {node: int(values[node]) for node in circuit["outputs"]}
+    return {out_id: values[out_id] for out_id in circuit.outputs}
 
 
 def collapsed_fault_list(circuit):
-    """Return collapsed gate-pin faults plus primary input and output faults."""
-    faults = [
-        f"INPUT({node}) stuck-at-{stuck_value}"
-        for node in circuit["inputs"]
-        for stuck_value in (0, 1)
-    ]
-    input_faults = {
-        "AND": 1,
-        "NAND": 1,
-        "OR": 0,
-        "NOR": 0,
-    }
-    output_faults = {
-        "AND": 0,
-        "NAND": 1,
-        "OR": 1,
-        "NOR": 0,
-    }
+    """Return total faults and a list of formatted, collapsed fault strings grouped by node."""
+    fault_lines = []
+    total_faults = 0
 
-    for gate in circuit["gates"]:
-        gate_type = gate["type"]
-        if gate_type in input_faults:
-            for index, node in enumerate(gate["inputs"], start=1):
-                faults.append(
-                    f"{gate['out']} input {index} ({node}) stuck-at-{input_faults[gate_type]}"
-                )
-            faults.append(
-                f"{gate['out']} output stuck-at-{output_faults[gate_type]}"
-            )
-        elif gate_type in {"NOT", "BUFF"}:
-            faults.extend(
-                (
-                    f"{gate['out']} output stuck-at-0",
-                    f"{gate['out']} output stuck-at-1",
-                )
-            )
-        else:  # XOR faults are retained at every input and output pin.
-            for index, node in enumerate(gate["inputs"], start=1):
-                for stuck_value in (0, 1):
-                    faults.append(
-                        f"{gate['out']} input {index} ({node}) "
-                        f"stuck-at-{stuck_value}"
-                    )
-            for stuck_value in (0, 1):
-                faults.append(
-                    f"{gate['out']} output stuck-at-{stuck_value}"
-                )
-    faults.extend(
-        f"OUTPUT({node}) stuck-at-{stuck_value}"
-        for node in circuit["outputs"]
-        for stuck_value in (0, 1)
-    )
-    return faults
+    # Group faults for primary inputs
+    for n in circuit.inputs:
+        name = circuit.get_name(n)
+        fault_lines.append(f"INPUT({name}): sa0, sa1")
+        total_faults += 2
+
+    input_faults = {"AND": 1, "NAND": 1, "OR": 0, "NOR": 0}
+    output_faults = {"AND": 0, "NAND": 1, "OR": 1, "NOR": 0}
+
+    # Group faults per gate
+    for gate in circuit.sorted_gates:
+        g_type = gate["type"]
+        out_name = circuit.get_name(gate["out"])
+        gate_faults = []
+
+        if g_type in input_faults:
+            for i, in_id in enumerate(gate["inputs"], start=1):
+                in_name = circuit.get_name(in_id)
+                gate_faults.append(f"input {i}({in_name}) - sa{input_faults[g_type]}")
+                total_faults += 1
+            gate_faults.append(f"output - sa{output_faults[g_type]}")
+            total_faults += 1
+            
+        elif g_type in {"NOT", "BUFF"}:
+            gate_faults.extend(["output - sa0", "output - sa1"])
+            total_faults += 2
+            
+        else:  # XOR faults are retained at every pin
+            for i, in_id in enumerate(gate["inputs"], start=1):
+                in_name = circuit.get_name(in_id)
+                gate_faults.extend([f"input {i}({in_name}) - sa0", f"input {i}({in_name}) - sa1"])
+                total_faults += 2
+            gate_faults.extend(["output - sa0", "output - sa1"])
+            total_faults += 2
+
+        fault_lines.append(f"{out_name}: {', '.join(gate_faults)}")
+
+    # Group faults for primary outputs
+    for n in circuit.outputs:
+        name = circuit.get_name(n)
+        fault_lines.append(f"OUTPUT({name}): sa0, sa1")
+        total_faults += 2
+
+    return total_faults, fault_lines
 
 
 def print_summary(circuit):
-    inputs = circuit["inputs"]
-    outputs = circuit["outputs"]
-    gates = circuit["gates"]
+    input_names = [circuit.get_name(i) for i in circuit.inputs]
+    output_names = [circuit.get_name(i) for i in circuit.outputs]
     print("--- Circuit Benchmark Summary ---")
-    print(f"Inputs  ({len(inputs)}): {', '.join(inputs)}")
-    print(f"Outputs ({len(outputs)}): {', '.join(outputs)}")
-    print("\nNodes (level order):")
-    for node in inputs:
-        output_label = " OUTPUT" if node in outputs else ""
-        print(f"{node} (level 0): INPUT{output_label}")
-    for gate in gates:
-        gate_inputs = ", ".join(gate["inputs"])
-        output_label = " OUTPUT" if gate["out"] in outputs else ""
-        print(
-            f"{gate['out']} (level {gate['level']}): "
-            f"{gate['count']}-input {gate['type']} of {gate_inputs}{output_label}"
-        )
-
-
-def print_fault_list(circuit):
-    faults = collapsed_fault_list(circuit)
-    print(f"\nCollapsed stuck-at fault list ({len(faults)} faults):")
-    for fault in faults:
-        print(f"- {fault}")
-
-
-def parse_input_assignments(assignments, input_nodes):
-    values = {}
-    for assignment in assignments:
-        if "=" not in assignment:
-            raise ValueError(
-                f"Invalid input assignment '{assignment}'; expected NAME=0 or NAME=1"
-            )
-        node, value = assignment.split("=", 1)
-        if node not in input_nodes:
-            raise ValueError(f"Unknown input '{node}'")
-        if node in values:
-            raise ValueError(f"Input '{node}' was assigned more than once")
-        if value not in {"0", "1"}:
-            raise ValueError(f"Input '{node}' must be assigned 0 or 1")
-        values[node] = int(value)
-    return values
-
-
-def prompt_for_input_values(input_nodes):
-    if not input_nodes:
-        return {}
-    input_order = ", ".join(input_nodes)
-    while True:
-        try:
-            bit_string = input(
-                f"\nEnter one bit per input in this order ({input_order}): "
-            ).strip()
-        except EOFError as error:
-            raise ValueError("No test vector was entered") from error
-        if len(bit_string) == len(input_nodes) and all(
-            bit in {"0", "1"} for bit in bit_string
-        ):
-            return {
-                node: int(bit)
-                for node, bit in zip(input_nodes, bit_string)
-            }
-        print(f"Enter exactly {len(input_nodes)} bits using only 0 and 1.")
+    print(f"Inputs  ({len(input_names)}): {', '.join(input_names)}")
+    print(f"Outputs ({len(output_names)}): {', '.join(output_names)}")
+    
+    print("\nNodes by Level:")
+    outputs_set = set(circuit.outputs)
+    
+    # Process Level 0 (Inputs)
+    print("Level 0:")
+    for node_id in circuit.inputs:
+        output_label = " (OUTPUT)" if node_id in outputs_set else ""
+        print(f"  {circuit.get_name(node_id)}: INPUT{output_label}")
+        
+    # Group remaining gates by their topological level
+    level_groups = defaultdict(list)
+    for gate in circuit.sorted_gates:
+        lvl = gate["level"]
+        out_lbl = " (OUTPUT)" if gate["out"] in outputs_set else ""
+        gate_inputs = ", ".join(circuit.get_name(i) for i in gate["inputs"])
+        node_str = f"{circuit.get_name(gate['out'])}: {gate['count']}-input {gate['type']} of {gate_inputs}{out_lbl}"
+        level_groups[lvl].append(node_str)
+        
+    # Print grouped levels
+    for lvl in sorted(level_groups.keys()):
+        print(f"\nLevel {lvl}:")
+        for node_str in level_groups[lvl]:
+            print(f"  {node_str}")
 
 
 def print_truth_table(circuit):
-    if len(circuit["inputs"]) > MAX_TRUTH_TABLE_INPUTS:
+    num_inputs = len(circuit.inputs)
+    if num_inputs > MAX_TRUTH_TABLE_INPUTS:
         raise ValueError(
-            f"Truth table would require 2^{len(circuit['inputs'])} rows; "
-            f"the limit is {MAX_TRUTH_TABLE_INPUTS} inputs. Use --input instead."
+            f"Truth table would require 2^{num_inputs} rows; limit is {MAX_TRUTH_TABLE_INPUTS} inputs."
         )
 
-    headings = circuit["inputs"] + circuit["outputs"]
+    total_rows = 1 << num_inputs
+    input_values = {}
+
+    for i, in_id in enumerate(circuit.inputs):
+        chunk_size = 1 << (num_inputs - 1 - i)
+        pattern = ((1 << chunk_size) - 1) << chunk_size
+        repeats = total_rows // (2 * chunk_size)
+        col_val = 0
+        for _ in range(repeats):
+            col_val = (col_val << (2 * chunk_size)) | pattern
+        input_values[in_id] = col_val
+
+    output_values = evaluate_circuit(circuit, input_values, num_bits=total_rows)
+
+    merged_values = {**input_values, **output_values}
+    headings = [circuit.get_name(i) for i in circuit.inputs + circuit.outputs]
+    
     print("\nTruth table:")
     print(" ".join(headings))
-    for bits in product((0, 1), repeat=len(circuit["inputs"])):
-        assignment = dict(zip(circuit["inputs"], bits))
-        output_values = evaluate_circuit(circuit, assignment)
-        row = bits + tuple(output_values[node] for node in circuit["outputs"])
-        print(" ".join(str(bit) for bit in row))
+    
+    for row in range(total_rows):
+        row_strs = []
+        for node_id in circuit.inputs + circuit.outputs:
+            bit = (merged_values[node_id] >> row) & 1
+            row_strs.append(str(bit))
+        print(" ".join(row_strs))
+
+
+def parse_input_assignments(assignments, circuit):
+    values = {}
+    input_names = {circuit.get_name(i) for i in circuit.inputs}
+    
+    for assignment in assignments:
+        if "=" not in assignment:
+            raise ValueError(f"Invalid input '{assignment}'; expected NAME=0 or NAME=1")
+        node_name, value = assignment.split("=", 1)
+        if node_name not in input_names:
+            raise ValueError(f"Unknown input '{node_name}'")
+            
+        node_id = circuit.get_id(node_name)
+        if node_id in values:
+            raise ValueError(f"Input '{node_name}' was assigned more than once")
+        if value not in {"0", "1"}:
+            raise ValueError(f"Input '{node_name}' must be assigned 0 or 1")
+        values[node_id] = int(value)
+    return values
+
+
+def prompt_for_input_values(circuit):
+    if not circuit.inputs:
+        return {}
+    input_names = [circuit.get_name(i) for i in circuit.inputs]
+    input_order = ", ".join(input_names)
+    
+    while True:
+        try:
+            bit_string = input(f"\nEnter one bit per input in this order ({input_order}): ").strip()
+        except EOFError as error:
+            raise ValueError("No test vector was entered") from error
+            
+        if len(bit_string) == len(circuit.inputs) and all(bit in {"0", "1"} for bit in bit_string):
+            return {
+                circuit.get_id(name): int(bit)
+                for name, bit in zip(input_names, bit_string)
+            }
+        print(f"Enter exactly {len(circuit.inputs)} bits using only 0 and 1.")
 
 
 def main():
-    argument_parser = argparse.ArgumentParser(
-        description="Parse and evaluate a combinational BENCH circuit."
-    )
+    argument_parser = argparse.ArgumentParser(description="Parse and evaluate a combinational BENCH circuit.")
     argument_parser.add_argument("circuit_file", help="path to a .bench file")
     evaluation = argument_parser.add_mutually_exclusive_group()
     evaluation.add_argument(
-        "--input",
-        action="append",
-        default=[],
-        metavar="NAME=BIT",
+        "--input", action="append", default=[], metavar="NAME=BIT",
         help="input assignment (repeat once per input to evaluate the circuit)",
     )
     evaluation.add_argument(
-        "--truth-table",
-        action="store_true",
+        "--truth-table", action="store_true",
         help="evaluate every possible input combination (up to 16 inputs)",
     )
     argument_parser.add_argument(
-        "--fault-list",
-        action="store_true",
+        "--fault-list", action="store_true",
         help="print the gate-pin stuck-at fault list after basic fault collapsing",
     )
     arguments = argument_parser.parse_args()
@@ -318,25 +363,29 @@ def main():
     try:
         circuit = parse_bench(arguments.circuit_file)
         print_summary(circuit)
+        
         if arguments.fault_list:
-            print_fault_list(circuit)
+            total_faults, fault_lines = collapsed_fault_list(circuit)
+            print(f"\nCollapsed stuck-at fault list ({total_faults} total faults):")
+            for line in fault_lines:
+                print(f"- {line}")
+                
         if arguments.truth_table:
             print_truth_table(circuit)
         else:
             input_values = (
-                parse_input_assignments(arguments.input, circuit["inputs"])
-                if arguments.input
-                else prompt_for_input_values(circuit["inputs"])
+                parse_input_assignments(arguments.input, circuit)
+                if arguments.input else prompt_for_input_values(circuit)
             )
-            output_values = evaluate_circuit(circuit, input_values)
+            output_values = evaluate_circuit(circuit, input_values, num_bits=1)
             print("\nOutput values:")
-            for node, value in output_values.items():
-                print(f"{node} = {value}")
+            for out_id in circuit.outputs:
+                print(f"{circuit.get_name(out_id)} = {output_values[out_id]}")
+                
     except (OSError, ValueError) as error:
         print(f"Error: {error}", file=sys.stderr)
         return 2
     return 0
-
 
 if __name__ == "__main__":
     sys.exit(main())
