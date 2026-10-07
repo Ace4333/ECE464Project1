@@ -152,8 +152,12 @@ def evaluate_circuit(circuit, input_values):
 
 
 def collapsed_fault_list(circuit):
-    """Return gate-pin stuck-at faults after basic single-gate collapsing."""
-    faults = []
+    """Return collapsed gate-pin faults plus primary input and output faults."""
+    faults = [
+        f"INPUT({node}) stuck-at-{stuck_value}"
+        for node in circuit["inputs"]
+        for stuck_value in (0, 1)
+    ]
     input_faults = {
         "AND": 1,
         "NAND": 1,
@@ -195,6 +199,11 @@ def collapsed_fault_list(circuit):
                 faults.append(
                     f"{gate['out']} output stuck-at-{stuck_value}"
                 )
+    faults.extend(
+        f"OUTPUT({node}) stuck-at-{stuck_value}"
+        for node in circuit["outputs"]
+        for stuck_value in (0, 1)
+    )
     return faults
 
 

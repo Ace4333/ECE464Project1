@@ -30,8 +30,9 @@ Truth-table generation is limited to circuits with at most 16 inputs to avoid
 exponentially large output. Supported gate types are `AND`, `NAND`, `OR`,
 `NOR`, `XOR`, `NOT`, and `BUFF`.
 
-Print the gate-pin stuck-at fault list with basic equivalence and dominance
-collapsing:
+Print the stuck-at fault list with basic single-gate collapsing for internal
+gate pins. Both stuck-at-0 and stuck-at-1 faults are also listed for every
+declared primary input and output:
 
 ```text
 python Project1_main.py c17.bench --fault-list
@@ -42,4 +43,7 @@ pin and a stuck-at-0 fault at the output. NAND, OR, and NOR use the
 corresponding polarity. NOT and BUFF retain both output faults because their
 input and output faults are equivalent. XOR faults are retained at every
 input and output pin. Faults are listed per gate pin, so separate fanout pins
-remain distinct.
+remain distinct. Primary `INPUT(...)` and `OUTPUT(...)` faults are separate
+entries from gate-pin faults. For `c17.bench`, the resulting list contains 32
+faults: 10 primary-input faults, 18 collapsed gate-pin faults, and 4
+primary-output faults.
