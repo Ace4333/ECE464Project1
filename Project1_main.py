@@ -2,7 +2,6 @@ import argparse
 import re
 import sys
 from collections import deque, defaultdict
-from itertools import product
 
 IDENTIFIER = r"[\w']+"
 INPUT_PATTERN = re.compile(rf"INPUT\s*\(\s*({IDENTIFIER})\s*\)", re.IGNORECASE)
@@ -185,11 +184,9 @@ def evaluate_circuit(circuit, input_values, num_bits=1):
 
 
 def collapsed_fault_list(circuit):
-    """Return total faults and a list of formatted, collapsed fault strings grouped by node."""
     fault_lines = []
     total_faults = 0
 
-    # Group faults for primary inputs
     for n in circuit.inputs:
         name = circuit.get_name(n)
         fault_lines.append(f"INPUT({name}): sa0, sa1")
@@ -198,7 +195,6 @@ def collapsed_fault_list(circuit):
     input_faults = {"AND": 1, "NAND": 1, "OR": 0, "NOR": 0}
     output_faults = {"AND": 0, "NAND": 1, "OR": 1, "NOR": 0}
 
-    # Group faults per gate
     for gate in circuit.sorted_gates:
         g_type = gate["type"]
         out_name = circuit.get_name(gate["out"])
@@ -226,7 +222,6 @@ def collapsed_fault_list(circuit):
 
         fault_lines.append(f"{out_name}: {', '.join(gate_faults)}")
 
-    # Group faults for primary outputs
     for n in circuit.outputs:
         name = circuit.get_name(n)
         fault_lines.append(f"OUTPUT({name}): sa0, sa1")
@@ -245,13 +240,11 @@ def print_summary(circuit):
     print("\nNodes by Level:")
     outputs_set = set(circuit.outputs)
     
-    # Process Level 0 (Inputs)
     print("Level 0:")
     for node_id in circuit.inputs:
         output_label = " (OUTPUT)" if node_id in outputs_set else ""
         print(f"  {circuit.get_name(node_id)}: INPUT{output_label}")
         
-    # Group remaining gates by their topological level
     level_groups = defaultdict(list)
     for gate in circuit.sorted_gates:
         lvl = gate["level"]
@@ -260,7 +253,6 @@ def print_summary(circuit):
         node_str = f"{circuit.get_name(gate['out'])}: {gate['count']}-input {gate['type']} of {gate_inputs}{out_lbl}"
         level_groups[lvl].append(node_str)
         
-    # Print grouped levels
     for lvl in sorted(level_groups.keys()):
         print(f"\nLevel {lvl}:")
         for node_str in level_groups[lvl]:
@@ -269,11 +261,6 @@ def print_summary(circuit):
 
 def print_truth_table(circuit):
     num_inputs = len(circuit.inputs)
-    if num_inputs > MAX_TRUTH_TABLE_INPUTS:
-        raise ValueError(
-            f"Truth table would require 2^{num_inputs} rows; limit is {MAX_TRUTH_TABLE_INPUTS} inputs."
-        )
-
     total_rows = 1 << num_inputs
     input_values = {}
 
@@ -287,7 +274,6 @@ def print_truth_table(circuit):
         input_values[in_id] = col_val
 
     output_values = evaluate_circuit(circuit, input_values, num_bits=total_rows)
-
     merged_values = {**input_values, **output_values}
     headings = [circuit.get_name(i) for i in circuit.inputs + circuit.outputs]
     
@@ -332,7 +318,7 @@ def prompt_for_input_values(circuit):
         try:
             bit_string = input(f"\nEnter one bit per input in this order ({input_order}): ").strip()
         except EOFError as error:
-            raise ValueError("No test vector was entered") from error
+            raise ValueError("No test vector was entered.") from error
             
         if len(bit_string) == len(circuit.inputs) and all(bit in {"0", "1"} for bit in bit_string):
             return {
@@ -342,21 +328,27 @@ def prompt_for_input_values(circuit):
         print(f"Enter exactly {len(circuit.inputs)} bits using only 0 and 1.")
 
 
+def ask_yes_no(prompt):
+    """Interactively ask a yes/no question and return a boolean."""
+    while True:
+        try:
+            response = input(prompt).strip().lower()
+            if response in {"y", "yes"}:
+                return True
+            if response in {"n", "no"}:
+                return False
+            print("Please answer 'y' or 'n'.")
+        except EOFError:
+            print()
+            return False
+
+
 def main():
     argument_parser = argparse.ArgumentParser(description="Parse and evaluate a combinational BENCH circuit.")
     argument_parser.add_argument("circuit_file", help="path to a .bench file")
-    evaluation = argument_parser.add_mutually_exclusive_group()
-    evaluation.add_argument(
+    argument_parser.add_argument(
         "--input", action="append", default=[], metavar="NAME=BIT",
         help="input assignment (repeat once per input to evaluate the circuit)",
-    )
-    evaluation.add_argument(
-        "--truth-table", action="store_true",
-        help="evaluate every possible input combination (up to 16 inputs)",
-    )
-    argument_parser.add_argument(
-        "--fault-list", action="store_true",
-        help="print the gate-pin stuck-at fault list after basic fault collapsing",
     )
     arguments = argument_parser.parse_args()
 
@@ -364,15 +356,28 @@ def main():
         circuit = parse_bench(arguments.circuit_file)
         print_summary(circuit)
         
-        if arguments.fault_list:
+        # Interactive Fault List Prompt
+        if ask_yes_no("\nDo you want to print the collapsed fault list? (y/n): "):
             total_faults, fault_lines = collapsed_fault_list(circuit)
             print(f"\nCollapsed stuck-at fault list ({total_faults} total faults):")
             for line in fault_lines:
                 print(f"- {line}")
-                
-        if arguments.truth_table:
-            print_truth_table(circuit)
-        else:
+
+        printed_truth_table = False
+        
+        # Interactive Truth Table Prompt
+        if ask_yes_no("\nDo you want to print the truth table? (y/n): "):
+            if len(circuit.inputs) > MAX_TRUTH_TABLE_INPUTS:
+                print(f"\n[!] WARNING: Circuit has {len(circuit.inputs)} inputs. "
+                      f"A truth table would require 2^{len(circuit.inputs)} rows.")
+                print(f"[!] To prevent freezing, the limit is set to {MAX_TRUTH_TABLE_INPUTS} inputs. "
+                      "Skipping truth table generation.")
+            else:
+                print_truth_table(circuit)
+                printed_truth_table = True
+
+        # If truth table was skipped or declined, evaluate a single test vector
+        if not printed_truth_table:
             input_values = (
                 parse_input_assignments(arguments.input, circuit)
                 if arguments.input else prompt_for_input_values(circuit)
@@ -382,8 +387,8 @@ def main():
             for out_id in circuit.outputs:
                 print(f"{circuit.get_name(out_id)} = {output_values[out_id]}")
                 
-    except (OSError, ValueError) as error:
-        print(f"Error: {error}", file=sys.stderr)
+    except (OSError, ValueError, KeyboardInterrupt) as error:
+        print(f"\nError: {error}", file=sys.stderr)
         return 2
     return 0
 
