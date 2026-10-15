@@ -350,6 +350,8 @@ def main():
                     faulty_machine = evaluate_circuit(circuit, tv, injected_fault=f)
                     if faulty_machine != good_machine:
                         detected_count += 1
+                        status = "DETECTED" if faulty_machine != good_machine else "NOT DETECTED"
+                        print(f"{f['str']}: {status}")
                         
                 elapsed = time.time() - start_time
                 coverage = (detected_count / len(faults)) * 100
