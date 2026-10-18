@@ -1,0 +1,510 @@
+{
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "seed": 464,
+  "source_sha256": "ffb72bd3f9b8d04fd0915ab3c4f06b48d22a330fe7aead192c1edb7da67b5bd9",
+  "comparisons": 9218,
+  "benchmarks": {
+    "c1355.bench": {
+      "inputs": 41,
+      "outputs": 32,
+      "gates": 546,
+      "collapsed_faults": 1756,
+      "good_vectors_checked": 12,
+      "fault_evaluations_checked": 0
+    },
+    "c17.bench": {
+      "inputs": 5,
+      "outputs": 2,
+      "gates": 6,
+      "collapsed_faults": 32,
+      "good_vectors_checked": 32,
+      "fault_evaluations_checked": 1024
+    },
+    "c1908.bench": {
+      "inputs": 33,
+      "outputs": 25,
+      "gates": 880,
+      "collapsed_faults": 2494,
+      "good_vectors_checked": 12,
+      "fault_evaluations_checked": 0
+    },
+    "c2670.bench": {
+      "inputs": 233,
+      "outputs": 140,
+      "gates": 1193,
+      "collapsed_faults": 4015,
+      "good_vectors_checked": 12,
+      "fault_evaluations_checked": 0
+    },
+    "c3540.bench": {
+      "inputs": 50,
+      "outputs": 22,
+      "gates": 1669,
+      "collapsed_faults": 4752,
+      "good_vectors_checked": 12,
+      "fault_evaluations_checked": 0
+    },
+    "c432.bench": {
+      "inputs": 36,
+      "outputs": 7,
+      "gates": 160,
+      "collapsed_faults": 636,
+      "good_vectors_checked": 12,
+      "fault_evaluations_checked": 0,
+      "assignment_fault_evaluations_checked": 6996
+    },
+    "c499.bench": {
+      "inputs": 41,
+      "outputs": 32,
+      "gates": 202,
+      "collapsed_faults": 1068,
+      "good_vectors_checked": 12,
+      "fault_evaluations_checked": 0
+    },
+    "c5315.bench": {
+      "inputs": 178,
+      "outputs": 123,
+      "gates": 2307,
+      "collapsed_faults": 7295,
+      "good_vectors_checked": 12,
+      "fault_evaluations_checked": 0
+    },
+    "c6288.bench": {
+      "inputs": 32,
+      "outputs": 32,
+      "gates": 2416,
+      "collapsed_faults": 7344,
+      "good_vectors_checked": 12,
+      "fault_evaluations_checked": 0
+    },
+    "c7552.bench": {
+      "inputs": 207,
+      "outputs": 108,
+      "gates": 3512,
+      "collapsed_faults": 10286,
+      "good_vectors_checked": 12,
+      "fault_evaluations_checked": 0
+    },
+    "c880.bench": {
+      "inputs": 60,
+      "outputs": 26,
+      "gates": 383,
+      "collapsed_faults": 1284,
+      "good_vectors_checked": 12,
+      "fault_evaluations_checked": 0
+    },
+    "hw1.bench": {
+      "inputs": 3,
+      "outputs": 4,
+      "gates": 12,
+      "collapsed_faults": 50,
+      "good_vectors_checked": 8,
+      "fault_evaluations_checked": 400
+    }
+  },
+  "assignment": {
+    "hw1_011": {
+      "outputs": {
+        "w": 0,
+        "x": 1,
+        "y": 0,
+        "z": 0
+      },
+      "detected": 17,
+      "total": 50,
+      "detected_ids": [
+        1,
+        2,
+        4,
+        6,
+        9,
+        11,
+        12,
+        17,
+        21,
+        25,
+        33,
+        36,
+        41,
+        43,
+        44,
+        47,
+        49
+      ]
+    },
+    "hw1_101": {
+      "outputs": {
+        "w": 0,
+        "x": 1,
+        "y": 1,
+        "z": 0
+      },
+      "detected": 14,
+      "total": 50,
+      "detected_ids": [
+        0,
+        3,
+        4,
+        8,
+        13,
+        17,
+        24,
+        27,
+        35,
+        39,
+        43,
+        44,
+        46,
+        49
+      ]
+    },
+    "c17_22-10-0": [
+      {
+        "input": "00000",
+        "good": {
+          "22": 0,
+          "23": 0
+        },
+        "faulty": {
+          "22": 1,
+          "23": 0
+        },
+        "detected": true
+      },
+      {
+        "input": "11111",
+        "good": {
+          "22": 1,
+          "23": 0
+        },
+        "faulty": {
+          "22": 1,
+          "23": 0
+        },
+        "detected": false
+      }
+    ],
+    "c6288_0x00050007": {
+      "convention": "first declared input receives leftmost (MSB) binary digit",
+      "binary": "00000000000001010000000000000111",
+      "outputs": {
+        "545": 0,
+        "1581": 0,
+        "1901": 0,
+        "2223": 0,
+        "2548": 0,
+        "2877": 0,
+        "3211": 0,
+        "3552": 0,
+        "3895": 0,
+        "4241": 0,
+        "4591": 0,
+        "4946": 0,
+        "5308": 0,
+        "5672": 0,
+        "5971": 0,
+        "6123": 0,
+        "6150": 0,
+        "6160": 0,
+        "6170": 0,
+        "6180": 0,
+        "6190": 0,
+        "6200": 0,
+        "6210": 0,
+        "6220": 0,
+        "6230": 0,
+        "6240": 0,
+        "6250": 1,
+        "6260": 1,
+        "6270": 0,
+        "6280": 0,
+        "6287": 1,
+        "6288": 0
+      },
+      "output_bit_to_node": {
+        "0": "545",
+        "1": "1581",
+        "2": "1901",
+        "3": "2223",
+        "4": "2548",
+        "5": "2877",
+        "6": "3211",
+        "7": "3552",
+        "8": "3895",
+        "9": "4241",
+        "10": "4591",
+        "11": "4946",
+        "12": "5308",
+        "13": "5672",
+        "14": "5971",
+        "15": "6123",
+        "16": "6150",
+        "17": "6160",
+        "18": "6170",
+        "19": "6180",
+        "20": "6190",
+        "21": "6200",
+        "22": "6210",
+        "23": "6220",
+        "24": "6230",
+        "25": "6240",
+        "26": "6250",
+        "27": "6260",
+        "28": "6270",
+        "29": "6280",
+        "30": "6288",
+        "31": "6287"
+      },
+      "multiplier_cases": 68
+    },
+    "c432_vectors": [
+      {
+        "index": 0,
+        "hex": "0x0ABCD1234",
+        "binary": "000010101011110011010001001000110100",
+        "outputs": {
+          "223": 1,
+          "329": 1,
+          "370": 1,
+          "421": 1,
+          "430": 1,
+          "431": 0,
+          "432": 0
+        },
+        "detected": 47,
+        "total": 636
+      },
+      {
+        "index": 1,
+        "hex": "0x2459CA087",
+        "binary": "001001000101100111001010000010000111",
+        "outputs": {
+          "223": 1,
+          "329": 1,
+          "370": 1,
+          "421": 1,
+          "430": 1,
+          "431": 1,
+          "432": 1
+        },
+        "detected": 42,
+        "total": 636
+      },
+      {
+        "index": 2,
+        "hex": "0xD8C3CC4AE",
+        "binary": "110110001100001111001100010010101110",
+        "outputs": {
+          "223": 1,
+          "329": 1,
+          "370": 1,
+          "421": 1,
+          "430": 1,
+          "431": 1,
+          "432": 0
+        },
+        "detected": 25,
+        "total": 636
+      },
+      {
+        "index": 3,
+        "hex": "0x39E21FDD0",
+        "binary": "001110011110001000011111110111010000",
+        "outputs": {
+          "223": 0,
+          "329": 1,
+          "370": 1,
+          "421": 1,
+          "430": 0,
+          "431": 0,
+          "432": 1
+        },
+        "detected": 74,
+        "total": 636
+      },
+      {
+        "index": 4,
+        "hex": "0xC3AF3F9A4",
+        "binary": "110000111010111100111111100110100100",
+        "outputs": {
+          "223": 1,
+          "329": 1,
+          "370": 1,
+          "421": 1,
+          "430": 0,
+          "431": 0,
+          "432": 0
+        },
+        "detected": 57,
+        "total": 636
+      },
+      {
+        "index": 5,
+        "hex": "0x84772741C",
+        "binary": "100001000111011100100111010000011100",
+        "outputs": {
+          "223": 1,
+          "329": 1,
+          "370": 1,
+          "421": 1,
+          "430": 1,
+          "431": 1,
+          "432": 1
+        },
+        "detected": 41,
+        "total": 636
+      },
+      {
+        "index": 6,
+        "hex": "0xE2A39FA07",
+        "binary": "111000101010001110011111101000000111",
+        "outputs": {
+          "223": 1,
+          "329": 0,
+          "370": 0,
+          "421": 1,
+          "430": 0,
+          "431": 0,
+          "432": 0
+        },
+        "detected": 83,
+        "total": 636
+      },
+      {
+        "index": 7,
+        "hex": "0xD57FD3254",
+        "binary": "110101010111111111010011001001010100",
+        "outputs": {
+          "223": 1,
+          "329": 1,
+          "370": 1,
+          "421": 1,
+          "430": 0,
+          "431": 0,
+          "432": 1
+        },
+        "detected": 61,
+        "total": 636
+      },
+      {
+        "index": 8,
+        "hex": "0x8D81309FA",
+        "binary": "100011011000000100110000100111111010",
+        "outputs": {
+          "223": 1,
+          "329": 1,
+          "370": 0,
+          "421": 1,
+          "430": 1,
+          "431": 1,
+          "432": 1
+        },
+        "detected": 42,
+        "total": 636
+      },
+      {
+        "index": 9,
+        "hex": "0x1EEAEC149",
+        "binary": "000111101110101011101100000101001001",
+        "outputs": {
+          "223": 1,
+          "329": 1,
+          "370": 1,
+          "421": 1,
+          "430": 0,
+          "431": 1,
+          "432": 1
+        },
+        "detected": 47,
+        "total": 636
+      },
+      {
+        "index": 10,
+        "hex": "0x46F5E8BE6",
+        "binary": "010001101111010111101000101111100110",
+        "outputs": {
+          "223": 1,
+          "329": 1,
+          "370": 1,
+          "421": 0,
+          "430": 0,
+          "431": 0,
+          "432": 0
+        },
+        "detected": 47,
+        "total": 636
+      }
+    ],
+    "c432_random_cumulative": 277
+  },
+  "known_issues": [
+    {
+      "name": "gate_before_input_multiple_driver",
+      "invalid_bench_accepted": "x=NOT(a)\nINPUT(x)\nINPUT(a)\nOUTPUT(x)\n"
+    },
+    {
+      "name": "empty_gate_pin",
+      "invalid_bench_accepted": "INPUT(a)\nINPUT(b)\nx=AND(a,,b)\nOUTPUT(x)\n"
+    },
+    {
+      "name": "empty_circuit",
+      "invalid_bench_accepted": "# empty\n"
+    }
+  ],
+  "cli_runs": [
+    {
+      "tag": "01_hw1_fault_listing",
+      "exit_code": 0
+    },
+    {
+      "tag": "02_c432_fault_listing",
+      "exit_code": 0
+    },
+    {
+      "tag": "03_hw1_circuit_simulation",
+      "exit_code": 0
+    },
+    {
+      "tag": "05_hw1_y_faults",
+      "exit_code": 0
+    },
+    {
+      "tag": "07_hw1_all_faults",
+      "exit_code": 0
+    },
+    {
+      "tag": "04_c6288_circuit_simulation",
+      "exit_code": 0
+    },
+    {
+      "tag": "08_c432_all_faults",
+      "exit_code": 0
+    },
+    {
+      "tag": "issue_cli_fault-list",
+      "exit_code": 2
+    },
+    {
+      "tag": "issue_cli_truth-table",
+      "exit_code": 2
+    },
+    {
+      "tag": "issue_cli_input",
+      "exit_code": 2
+    },
+    {
+      "tag": "issue_eof_menu",
+      "exit_code": 1
+    },
+    {
+      "tag": "issue_eof_fault_id",
+      "exit_code": 1
+    },
+    {
+      "tag": "issue_hex_input",
+      "exit_code": 0
+    }
+  ],
+  "fault_evaluations_compared": 8420,
+  "source_unchanged": true
+}

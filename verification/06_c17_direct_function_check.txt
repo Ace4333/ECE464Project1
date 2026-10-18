@@ -1,0 +1,29 @@
+Direct evaluate_circuit() checks, not menu output. The exact branch fault
+22-10-0 is absent from generate_faults(), so the current menu cannot select it.
+
+[
+  {
+    "input": "00000",
+    "good": {
+      "22": 0,
+      "23": 0
+    },
+    "faulty": {
+      "22": 1,
+      "23": 0
+    },
+    "detected": true
+  },
+  {
+    "input": "11111",
+    "good": {
+      "22": 1,
+      "23": 0
+    },
+    "faulty": {
+      "22": 1,
+      "23": 0
+    },
+    "detected": false
+  }
+]

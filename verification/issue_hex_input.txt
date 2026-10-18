@@ -1,0 +1,70 @@
+BENCH: c6288.bench
+Arguments: []
+Input supplied to menu:
+2
+0x00050007
+00000000000001010000000000000111
+5
+
+Exit code: 0
+STDOUT:
+
+--- Circuit Benchmark Summary ---
+Inputs  (32): 1, 18, 35, 52, 69, 86, 103, 120, 137, 154, 171, 188, 205, 222, 239, 256, 273, 290, 307, 324, 341, 358, 375, 392, 409, 426, 443, 460, 477, 494, 511, 528
+Outputs (32): 545, 1581, 1901, 2223, 2548, 2877, 3211, 3552, 3895, 4241, 4591, 4946, 5308, 5672, 5971, 6123, 6150, 6160, 6170, 6180, 6190, 6200, 6210, 6220, 6230, 6240, 6250, 6260, 6270, 6280, 6287, 6288
+Gates   (2416)
+
+========================================
+1. Fault listing
+2. Circuit simulation
+3. Fault simulation (Single fault against TV)
+4. Fault simulation (All faults against TV)
+5. Exit
+Select an option (1-5):
+Enter test vector (1, 18, 35, 52, 69, 86, 103, 120, 137, 154, 171, 188, 205, 222, 239, 256, 273, 290, 307, 324, 341, 358, 375, 392, 409, 426, 443, 460, 477, 494, 511, 528): Error: Enter exactly 32 bits using only 0 and 1.
+
+Enter test vector (1, 18, 35, 52, 69, 86, 103, 120, 137, 154, 171, 188, 205, 222, 239, 256, 273, 290, 307, 324, 341, 358, 375, 392, 409, 426, 443, 460, 477, 494, 511, 528):
+Circuit Simulation Results:
+  545 = 0
+  1581 = 0
+  1901 = 0
+  2223 = 0
+  2548 = 0
+  2877 = 0
+  3211 = 0
+  3552 = 0
+  3895 = 0
+  4241 = 0
+  4591 = 0
+  4946 = 0
+  5308 = 0
+  5672 = 0
+  5971 = 0
+  6123 = 0
+  6150 = 0
+  6160 = 0
+  6170 = 0
+  6180 = 0
+  6190 = 0
+  6200 = 0
+  6210 = 0
+  6220 = 0
+  6230 = 0
+  6240 = 0
+  6250 = 1
+  6260 = 1
+  6270 = 0
+  6280 = 0
+  6287 = 1
+  6288 = 0
+(Completed in 0.00100s)
+
+========================================
+1. Fault listing
+2. Circuit simulation
+3. Fault simulation (Single fault against TV)
+4. Fault simulation (All faults against TV)
+5. Exit
+Select an option (1-5): Exiting.
+
+STDERR:
