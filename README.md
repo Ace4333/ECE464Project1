@@ -93,6 +93,6 @@ python verification/verify_project.py
 
 truth tables are limited to 16 inputs. supported gates are AND, NAND, OR, NOR, XOR, NOT, and BUFF. malformed declarations, empty pins, cycles, undefined nodes, missing inputs, and overflowing vectors are rejected.
 
-see [verification report](VERIFICATION_REPORT.md) and [current results](verification/results.json). the validator refreshes the raw program transcripts in `verification/`.
+the validator writes local results and program transcripts in `verification/`.
 
 the hand-work section and screenshot pdfs remain separate submission deliverables. the text transcripts are evidence of runs, not screenshot pdfs or handwritten work.
