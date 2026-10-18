@@ -1,0 +1,5 @@
+__pycache__/
+*.py[cod]
+verification/*.txt
+verification/*.json
+verification/*.csv
