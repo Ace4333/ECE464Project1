@@ -1,0 +1,17 @@
+BENCH: hw1.bench
+Arguments: ['--vector', '0x8']
+Input supplied to menu:
+
+Exit code: 2
+STDOUT:
+
+--- Project 1 Circuit Summary ---
+Inputs  (3): a, b, c
+Outputs (4): w, x, y, z
+Gates   (12)
+Fault model: collapsed pins (50 entries)
+Hex mapping: msb-first; binary follows input declaration order
+
+STDERR:
+
+Error: Vector exceeds the circuit's 3 inputs

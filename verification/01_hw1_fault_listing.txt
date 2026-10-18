@@ -7,19 +7,22 @@ Input supplied to menu:
 Exit code: 0
 STDOUT:
 
---- Circuit Benchmark Summary ---
+--- Project 1 Circuit Summary ---
 Inputs  (3): a, b, c
 Outputs (4): w, x, y, z
 Gates   (12)
+Fault model: collapsed pins (50 entries)
+Hex mapping: msb-first; binary follows input declaration order
 
 ========================================
 1. Fault listing
-2. Circuit simulation
-3. Fault simulation (Single fault against TV)
-4. Fault simulation (All faults against TV)
+2. Circuit simulation (with intermediate nodes)
+3. Fault simulation (single fault)
+4. Fault simulation (all faults)
 5. Exit
-Select an option (1-5):
---- Collapsed Fault List (50 total faults) ---
+6. Random vectors (all faults, summary)
+Select an option (1-6):
+--- Collapsed Pin Fault List (50 total faults) ---
 [0] INPUT(a) - sa0
 [1] INPUT(a) - sa1
 [2] INPUT(b) - sa0
@@ -50,10 +53,11 @@ y: [39] input 1(g) - sa0, [40] input 2(h) - sa0, [41] output - sa1
 
 ========================================
 1. Fault listing
-2. Circuit simulation
-3. Fault simulation (Single fault against TV)
-4. Fault simulation (All faults against TV)
+2. Circuit simulation (with intermediate nodes)
+3. Fault simulation (single fault)
+4. Fault simulation (all faults)
 5. Exit
-Select an option (1-5): Exiting.
+6. Random vectors (all faults, summary)
+Select an option (1-6): Exiting.
 
 STDERR:

@@ -1,0 +1,23 @@
+BENCH: hw1.bench
+Arguments: ['--input', 'a=0', '--input', 'b=1', '--input', 'c=1']
+Input supplied to menu:
+
+Exit code: 0
+STDOUT:
+
+--- Project 1 Circuit Summary ---
+Inputs  (3): a, b, c
+Outputs (4): w, x, y, z
+Gates   (12)
+Fault model: collapsed pins (50 entries)
+Hex mapping: msb-first; binary follows input declaration order
+Input vector (declaration order): 011
+
+Circuit Simulation Results:
+  w = 0
+  x = 1
+  y = 0
+  z = 0
+(Completed in 0.00002s)
+
+STDERR:

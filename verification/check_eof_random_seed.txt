@@ -1,0 +1,27 @@
+BENCH: hw1.bench
+Arguments: []
+Input supplied to menu:
+6
+10
+
+Exit code: 0
+STDOUT:
+
+--- Project 1 Circuit Summary ---
+Inputs  (3): a, b, c
+Outputs (4): w, x, y, z
+Gates   (12)
+Fault model: collapsed pins (50 entries)
+Hex mapping: msb-first; binary follows input declaration order
+
+========================================
+1. Fault listing
+2. Circuit simulation (with intermediate nodes)
+3. Fault simulation (single fault)
+4. Fault simulation (all faults)
+5. Exit
+6. Random vectors (all faults, summary)
+Select an option (1-6): Random vector count [10]: Seed [464]:
+Input closed. Exiting.
+
+STDERR:

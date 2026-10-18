@@ -1,0 +1,61 @@
+BENCH: c17.bench
+Arguments: []
+Input supplied to menu:
+3
+00000
+22-10-0
+3
+11111
+22-10-0
+5
+
+Exit code: 0
+STDOUT:
+
+--- Project 1 Circuit Summary ---
+Inputs  (5): 1, 2, 3, 6, 7
+Outputs (2): 22, 23
+Gates   (6)
+Fault model: collapsed pins (32 entries)
+Hex mapping: msb-first; binary follows input declaration order
+
+========================================
+1. Fault listing
+2. Circuit simulation (with intermediate nodes)
+3. Fault simulation (single fault)
+4. Fault simulation (all faults)
+5. Exit
+6. Random vectors (all faults, summary)
+Select an option (1-6):
+Enter binary or hex test vector (1, 2, 3, 6, 7): Enter fault ID [0-31] or named fault (e.g. y-1, 22-10-0): Input vector (declaration order): 00000
+
+Fault Selected: 22-10-0 (gate input 1)
+Good Machine Output:   {'22': 0, '23': 0}
+Faulty Machine Output: {'22': 1, '23': 0}
+Result: DETECTED
+
+========================================
+1. Fault listing
+2. Circuit simulation (with intermediate nodes)
+3. Fault simulation (single fault)
+4. Fault simulation (all faults)
+5. Exit
+6. Random vectors (all faults, summary)
+Select an option (1-6):
+Enter binary or hex test vector (1, 2, 3, 6, 7): Enter fault ID [0-31] or named fault (e.g. y-1, 22-10-0): Input vector (declaration order): 11111
+
+Fault Selected: 22-10-0 (gate input 1)
+Good Machine Output:   {'22': 1, '23': 0}
+Faulty Machine Output: {'22': 1, '23': 0}
+Result: NOT DETECTED
+
+========================================
+1. Fault listing
+2. Circuit simulation (with intermediate nodes)
+3. Fault simulation (single fault)
+4. Fault simulation (all faults)
+5. Exit
+6. Random vectors (all faults, summary)
+Select an option (1-6): Exiting.
+
+STDERR:

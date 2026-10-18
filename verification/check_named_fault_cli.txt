@@ -1,0 +1,21 @@
+BENCH: c17.bench
+Arguments: ['--vector', '00000', '--fault', '22-10-0']
+Input supplied to menu:
+
+Exit code: 0
+STDOUT:
+
+--- Project 1 Circuit Summary ---
+Inputs  (5): 1, 2, 3, 6, 7
+Outputs (2): 22, 23
+Gates   (6)
+Fault model: collapsed pins (32 entries)
+Hex mapping: msb-first; binary follows input declaration order
+Input vector (declaration order): 00000
+
+Fault Selected: 22-10-0 (gate input 1)
+Good Machine Output:   {'22': 0, '23': 0}
+Faulty Machine Output: {'22': 1, '23': 0}
+Result: DETECTED
+
+STDERR:

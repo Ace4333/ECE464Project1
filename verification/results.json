@@ -1,8 +1,8 @@
 {
   "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
   "seed": 464,
-  "source_sha256": "ffb72bd3f9b8d04fd0915ab3c4f06b48d22a330fe7aead192c1edb7da67b5bd9",
-  "comparisons": 9218,
+  "source_sha256": "e75d5c1cac6d21e38f47e24e35c9eafa745b970d6e482af3371f53866801afec",
+  "comparisons": 33081,
   "benchmarks": {
     "c1355.bench": {
       "inputs": 41,
@@ -10,7 +10,8 @@
       "gates": 546,
       "collapsed_faults": 1756,
       "good_vectors_checked": 12,
-      "fault_evaluations_checked": 0
+      "fault_evaluations_checked": 0,
+      "full_pin_faults": 3366
     },
     "c17.bench": {
       "inputs": 5,
@@ -18,7 +19,8 @@
       "gates": 6,
       "collapsed_faults": 32,
       "good_vectors_checked": 32,
-      "fault_evaluations_checked": 1024
+      "fault_evaluations_checked": 1024,
+      "full_pin_faults": 50
     },
     "c1908.bench": {
       "inputs": 33,
@@ -26,7 +28,8 @@
       "gates": 880,
       "collapsed_faults": 2494,
       "good_vectors_checked": 12,
-      "fault_evaluations_checked": 0
+      "fault_evaluations_checked": 0,
+      "full_pin_faults": 4872
     },
     "c2670.bench": {
       "inputs": 233,
@@ -34,7 +37,8 @@
       "gates": 1193,
       "collapsed_faults": 4015,
       "good_vectors_checked": 12,
-      "fault_evaluations_checked": 0
+      "fault_evaluations_checked": 0,
+      "full_pin_faults": 7284
     },
     "c3540.bench": {
       "inputs": 50,
@@ -42,7 +46,8 @@
       "gates": 1669,
       "collapsed_faults": 4752,
       "good_vectors_checked": 12,
-      "fault_evaluations_checked": 0
+      "fault_evaluations_checked": 0,
+      "full_pin_faults": 9360
     },
     "c432.bench": {
       "inputs": 36,
@@ -51,6 +56,7 @@
       "collapsed_faults": 636,
       "good_vectors_checked": 12,
       "fault_evaluations_checked": 0,
+      "full_pin_faults": 1078,
       "assignment_fault_evaluations_checked": 6996
     },
     "c499.bench": {
@@ -59,7 +65,8 @@
       "gates": 202,
       "collapsed_faults": 1068,
       "good_vectors_checked": 12,
-      "fault_evaluations_checked": 0
+      "fault_evaluations_checked": 0,
+      "full_pin_faults": 1366
     },
     "c5315.bench": {
       "inputs": 178,
@@ -67,7 +74,8 @@
       "gates": 2307,
       "collapsed_faults": 7295,
       "good_vectors_checked": 12,
-      "fault_evaluations_checked": 0
+      "fault_evaluations_checked": 0,
+      "full_pin_faults": 13988
     },
     "c6288.bench": {
       "inputs": 32,
@@ -75,7 +83,8 @@
       "gates": 2416,
       "collapsed_faults": 7344,
       "good_vectors_checked": 12,
-      "fault_evaluations_checked": 0
+      "fault_evaluations_checked": 0,
+      "full_pin_faults": 14560
     },
     "c7552.bench": {
       "inputs": 207,
@@ -83,7 +92,8 @@
       "gates": 3512,
       "collapsed_faults": 10286,
       "good_vectors_checked": 12,
-      "fault_evaluations_checked": 0
+      "fault_evaluations_checked": 0,
+      "full_pin_faults": 19942
     },
     "c880.bench": {
       "inputs": 60,
@@ -91,7 +101,8 @@
       "gates": 383,
       "collapsed_faults": 1284,
       "good_vectors_checked": 12,
-      "fault_evaluations_checked": 0
+      "fault_evaluations_checked": 0,
+      "full_pin_faults": 2396
     },
     "hw1.bench": {
       "inputs": 3,
@@ -99,7 +110,8 @@
       "gates": 12,
       "collapsed_faults": 50,
       "good_vectors_checked": 8,
-      "fault_evaluations_checked": 400
+      "fault_evaluations_checked": 400,
+      "full_pin_faults": 86
     }
   },
   "assignment": {
@@ -130,7 +142,8 @@
         44,
         47,
         49
-      ]
+      ],
+      "full_detected": 30
     },
     "hw1_101": {
       "outputs": {
@@ -156,7 +169,8 @@
         44,
         46,
         49
-      ]
+      ],
+      "full_detected": 23
     },
     "c17_22-10-0": [
       {
@@ -272,7 +286,9 @@
           "432": 0
         },
         "detected": 47,
-        "total": 636
+        "total": 636,
+        "full_detected": 100,
+        "full_total": 1078
       },
       {
         "index": 1,
@@ -288,7 +304,9 @@
           "432": 1
         },
         "detected": 42,
-        "total": 636
+        "total": 636,
+        "full_detected": 80,
+        "full_total": 1078
       },
       {
         "index": 2,
@@ -304,7 +322,9 @@
           "432": 0
         },
         "detected": 25,
-        "total": 636
+        "total": 636,
+        "full_detected": 54,
+        "full_total": 1078
       },
       {
         "index": 3,
@@ -320,7 +340,9 @@
           "432": 1
         },
         "detected": 74,
-        "total": 636
+        "total": 636,
+        "full_detected": 159,
+        "full_total": 1078
       },
       {
         "index": 4,
@@ -336,7 +358,9 @@
           "432": 0
         },
         "detected": 57,
-        "total": 636
+        "total": 636,
+        "full_detected": 123,
+        "full_total": 1078
       },
       {
         "index": 5,
@@ -352,7 +376,9 @@
           "432": 1
         },
         "detected": 41,
-        "total": 636
+        "total": 636,
+        "full_detected": 77,
+        "full_total": 1078
       },
       {
         "index": 6,
@@ -368,7 +394,9 @@
           "432": 0
         },
         "detected": 83,
-        "total": 636
+        "total": 636,
+        "full_detected": 195,
+        "full_total": 1078
       },
       {
         "index": 7,
@@ -384,7 +412,9 @@
           "432": 1
         },
         "detected": 61,
-        "total": 636
+        "total": 636,
+        "full_detected": 128,
+        "full_total": 1078
       },
       {
         "index": 8,
@@ -400,7 +430,9 @@
           "432": 1
         },
         "detected": 42,
-        "total": 636
+        "total": 636,
+        "full_detected": 93,
+        "full_total": 1078
       },
       {
         "index": 9,
@@ -416,7 +448,9 @@
           "432": 1
         },
         "detected": 47,
-        "total": 636
+        "total": 636,
+        "full_detected": 99,
+        "full_total": 1078
       },
       {
         "index": 10,
@@ -432,25 +466,14 @@
           "432": 0
         },
         "detected": 47,
-        "total": 636
+        "total": 636,
+        "full_detected": 100,
+        "full_total": 1078
       }
     ],
     "c432_random_cumulative": 277
   },
-  "known_issues": [
-    {
-      "name": "gate_before_input_multiple_driver",
-      "invalid_bench_accepted": "x=NOT(a)\nINPUT(x)\nINPUT(a)\nOUTPUT(x)\n"
-    },
-    {
-      "name": "empty_gate_pin",
-      "invalid_bench_accepted": "INPUT(a)\nINPUT(b)\nx=AND(a,,b)\nOUTPUT(x)\n"
-    },
-    {
-      "name": "empty_circuit",
-      "invalid_bench_accepted": "# empty\n"
-    }
-  ],
+  "known_issues": [],
   "cli_runs": [
     {
       "tag": "01_hw1_fault_listing",
@@ -473,6 +496,10 @@
       "exit_code": 0
     },
     {
+      "tag": "06_c17_branch_faults",
+      "exit_code": 0
+    },
+    {
       "tag": "04_c6288_circuit_simulation",
       "exit_code": 0
     },
@@ -481,30 +508,103 @@
       "exit_code": 0
     },
     {
-      "tag": "issue_cli_fault-list",
-      "exit_code": 2
-    },
-    {
-      "tag": "issue_cli_truth-table",
-      "exit_code": 2
-    },
-    {
-      "tag": "issue_cli_input",
-      "exit_code": 2
-    },
-    {
-      "tag": "issue_eof_menu",
-      "exit_code": 1
-    },
-    {
-      "tag": "issue_eof_fault_id",
-      "exit_code": 1
-    },
-    {
-      "tag": "issue_hex_input",
+      "tag": "check_cli_fault_list",
       "exit_code": 0
+    },
+    {
+      "tag": "check_cli_truth_table",
+      "exit_code": 0
+    },
+    {
+      "tag": "check_cli_assignments",
+      "exit_code": 0
+    },
+    {
+      "tag": "check_eof_menu",
+      "exit_code": 0
+    },
+    {
+      "tag": "check_eof_vector",
+      "exit_code": 0
+    },
+    {
+      "tag": "check_eof_fault_id",
+      "exit_code": 0
+    },
+    {
+      "tag": "check_eof_random_count",
+      "exit_code": 0
+    },
+    {
+      "tag": "check_eof_random_seed",
+      "exit_code": 0
+    },
+    {
+      "tag": "check_hex_trace",
+      "exit_code": 0
+    },
+    {
+      "tag": "check_named_fault_cli",
+      "exit_code": 0
+    },
+    {
+      "tag": "check_all_fault_rows",
+      "exit_code": 0
+    },
+    {
+      "tag": "check_random_batch",
+      "exit_code": 0
+    },
+    {
+      "tag": "check_full_list",
+      "exit_code": 0
+    },
+    {
+      "tag": "check_named_y0",
+      "exit_code": 0
+    },
+    {
+      "tag": "check_named_y1",
+      "exit_code": 0
+    },
+    {
+      "tag": "check_c432_hex_cli",
+      "exit_code": 0
+    },
+    {
+      "tag": "check_full_simulation",
+      "exit_code": 0
+    },
+    {
+      "tag": "check_random_menu",
+      "exit_code": 0
+    },
+    {
+      "tag": "check_error_overflow",
+      "exit_code": 2
+    },
+    {
+      "tag": "check_error_missing_input",
+      "exit_code": 2
+    },
+    {
+      "tag": "check_error_duplicate_input",
+      "exit_code": 2
+    },
+    {
+      "tag": "check_error_bad_fault",
+      "exit_code": 2
+    },
+    {
+      "tag": "check_error_big_truth_table",
+      "exit_code": 2
+    },
+    {
+      "tag": "check_error_bad_random_count",
+      "exit_code": 2
     }
   ],
+  "full_fault_evaluations_compared": 14146,
   "fault_evaluations_compared": 8420,
   "source_unchanged": true
 }

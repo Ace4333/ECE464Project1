@@ -1,7 +1,6 @@
-"""Read-only project review. Run with Python 3; no third-party packages needed.
+"""Project 1 regression checks. Run with Python 3; no third-party packages needed.
 
-Writes results.json and CLI transcripts beside this file. Known interface and
-parser defects are recorded separately from numerical comparison failures.
+Writes results.json and current CLI transcripts beside this file.
 The reference evaluator parses BENCH independently and uses recursive Boolean
 evaluation instead of the project's integer IDs and topological evaluator.
 """
@@ -94,7 +93,7 @@ def main():
     spec.loader.exec_module(project)
     data = {"python": sys.version, "seed": SEED, "source_sha256": before,
             "comparisons": 0, "benchmarks": {}, "assignment": {},
-            "known_issues": [], "cli_runs": []}
+            "known_issues": [], "cli_runs": [], "full_fault_evaluations_compared": 0}
 
     def compare(actual, expected, label):
         if actual != expected:
@@ -106,10 +105,13 @@ def main():
                              input=stdin, text=True, capture_output=True, timeout=30)
         run.stdout = run.stdout.replace(str(ROOT), ".").replace(ROOT.as_posix(), ".")
         run.stderr = run.stderr.replace(str(ROOT), ".").replace(ROOT.as_posix(), ".")
-        (HERE / f"{tag}.txt").write_text(
+        transcript = (
             f"BENCH: {name}\nArguments: {list(extra)!r}\n"
             f"Input supplied to menu:\n{stdin}\nExit code: {run.returncode}\n"
-            f"STDOUT:\n{run.stdout}\nSTDERR:\n{run.stderr}", encoding="utf-8")
+            f"STDOUT:\n{run.stdout}\nSTDERR:\n{run.stderr}")
+        (HERE / f"{tag}.txt").write_text(
+            "\n".join(line.rstrip() for line in transcript.splitlines()) + "\n",
+            encoding="utf-8", newline="\n")
         compare(run.returncode, expected_code, f"CLI {tag} exit")
         data["cli_runs"].append({"tag": tag, "exit_code": run.returncode})
         return run
@@ -155,6 +157,28 @@ def main():
             "gates": len(circuit.gates), "collapsed_faults": len(faults),
             "good_vectors_checked": len(vectors),
             "fault_evaluations_checked": len(vectors) * len(faults) if n <= 5 else 0}
+        full_faults = project.generate_faults(circuit, "full")
+        expected_full_count = 2 * (len(circuit.inputs) + len(circuit.outputs)
+                                   + len(circuit.gates) + sum(len(g["inputs"]) for g in circuit.gates))
+        compare(len(full_faults), expected_full_count, path.name + " full count")
+        actual_sites = {(f["type"], f["node"], f.get("in_idx"), f["val"]) for f in full_faults}
+        expected_sites = {(kind, node, None, bit) for kind, pins in
+                          (("stem", circuit.inputs), ("out_stem", circuit.outputs))
+                          for node in pins for bit in (0, 1)}
+        for gate in circuit.gates:
+            expected_sites.update(("out", gate["out"], None, bit) for bit in (0, 1))
+            expected_sites.update(("in", gate["out"], pin, bit)
+                                  for pin in range(len(gate["inputs"])) for bit in (0, 1))
+        compare(actual_sites, expected_sites, path.name + " complete full fault sites")
+        data["benchmarks"][path.name]["full_pin_faults"] = len(full_faults)
+        if n <= 5:
+            for bits in vectors:
+                tv = project.parse_vector(circuit, bits)
+                for f in full_faults:
+                    rf = (f["type"], circuit.get_name(f["node"]), f.get("in_idx"), f["val"])
+                    compare(named_outputs(circuit, tv, f), reference_evaluate(ref, bits, rf)[0],
+                            f"{path.name} full {bits} {rf}")
+                    data["full_fault_evaluations_compared"] += 1
 
     hw = project.parse_bench(ROOT / "hw1.bench")
     hf = project.generate_faults(hw)
@@ -169,6 +193,8 @@ def main():
         data["assignment"]["hw1_" + bits] = {
             "outputs": good, "detected": len(detected), "total": len(hf),
             "detected_ids": detected}
+        data["assignment"]["hw1_" + bits]["full_detected"] = sum(
+            named_outputs(hw, tv, f) != good for f in project.generate_faults(hw, "full"))
     for sa in (1, 0):
         fid = next(i for i, f in enumerate(hf) if f["type"] == "out_stem"
                    and hw.get_name(f["node"]) == "y" and f["val"] == sa)
@@ -180,7 +206,9 @@ def main():
     cf = project.generate_faults(c17)
     target = {"node": c17.node_to_id["22"], "type": "in", "in_idx": 0, "val": 0}
     compare(any(all(f.get(k) == v for k, v in target.items()) for f in cf), False,
-            "required 22-10-0 missing from selectable list")
+            "collapsed list omits equivalent branch fault")
+    resolved = project.resolve_fault(c17, "22-10-0", cf)
+    compare({k: resolved[k] for k in target}, target, "named branch resolves outside collapsed list")
     data["assignment"]["c17_22-10-0"] = []
     for bits, expected_good, expected_bad in [
             ("00000", {"22": 0, "23": 0}, {"22": 1, "23": 0}),
@@ -192,11 +220,10 @@ def main():
         compare(faulty, expected_bad, "c17 hand faulty")
         data["assignment"]["c17_22-10-0"].append(
             {"input": bits, "good": good, "faulty": faulty, "detected": good != faulty})
-    (HERE / "06_c17_direct_function_check.txt").write_text(
-        "Direct evaluate_circuit() checks, not menu output. The exact branch fault\n"
-        "22-10-0 is absent from generate_faults(), so the current menu cannot select it.\n\n"
-        + json.dumps(data["assignment"]["c17_22-10-0"], indent=2) + "\n",
-        encoding="utf-8")
+    run = run_cli("c17.bench", "3\n00000\n22-10-0\n3\n11111\n22-10-0\n5\n",
+                  "06_c17_branch_faults")
+    compare(re.findall(r"Result: (.*)", run.stdout), ["DETECTED", "NOT DETECTED"],
+            "c17 branch menu results")
 
     c6288 = project.parse_bench(ROOT / "c6288.bench")
     ref6288 = reference_parse(ROOT / "c6288.bench")
@@ -230,9 +257,19 @@ def main():
     expected, nodes = reference_evaluate(ref6288, bits)
     compare(named_outputs(c6288, dict(zip(c6288.inputs, map(int, bits)))), expected,
             "c6288 assignment vector")
+    trace = []
+    project.evaluate_circuit(c6288, project.parse_vector(c6288, "0x00050007"), trace=trace)
+    compare(len(trace), len(c6288.gates), "trace contains every gate")
+    levels = {node: 0 for node in c6288.inputs}
+    for row in trace:
+        compare(row["value"], nodes[c6288.get_name(row["node"])], "trace result")
+        compare(row["level"], max(levels[node] for node, _ in row["inputs"]) + 1, "trace level")
+        levels[row["node"]] = row["level"]
+        for node, bit in row["inputs"]:
+            compare(bit, nodes[c6288.get_name(node)], "trace input")
     (HERE / "04_c6288_reference_nodes.csv").write_text(
         "node,value\n" + "".join(f"{node},{value}\n" for node, value in nodes.items()),
-        encoding="utf-8")
+        encoding="utf-8", newline="\n")
     data["assignment"]["c6288_0x00050007"] = {
         "convention": "first declared input receives leftmost (MSB) binary digit",
         "binary": bits, "outputs": expected,
@@ -241,6 +278,7 @@ def main():
     c432 = project.parse_bench(ROOT / "c432.bench")
     ref432 = reference_parse(ROOT / "c432.bench")
     ff = project.generate_faults(c432)
+    full432 = project.generate_faults(c432, "full")
     rand432 = random.Random(SEED)
     vectors = [format(0xABCD1234, "036b")] + [
         format(rand432.getrandbits(36), "036b") for _ in range(10)]
@@ -261,9 +299,17 @@ def main():
                 detected.add(i)
         if index:
             cumulative |= detected
+        full_detected = 0
+        for f in full432:
+            rf = (f["type"], c432.get_name(f["node"]), f.get("in_idx"), f["val"])
+            faulty = named_outputs(c432, tv, f)
+            compare(faulty, reference_evaluate(ref432, bits, rf)[0], "c432 full fault")
+            full_detected += faulty != good
+            data["full_fault_evaluations_compared"] += 1
         data["assignment"]["c432_vectors"].append({
             "index": index, "hex": f"0x{int(bits, 2):09X}", "binary": bits,
-            "outputs": good, "detected": len(detected), "total": len(ff)})
+            "outputs": good, "detected": len(detected), "total": len(ff),
+            "full_detected": full_detected, "full_total": len(full432)})
     run = run_cli("c432.bench", "\n".join(batch + ["5", ""]), "08_c432_all_faults")
     compare([int(n) for n in re.findall(r"Faults Detected:\s+(\d+)", run.stdout)],
             [r["detected"] for r in data["assignment"]["c432_vectors"]],
@@ -272,17 +318,80 @@ def main():
     data["benchmarks"]["c432.bench"]["assignment_fault_evaluations_checked"] = len(ff) * len(vectors)
     data["fault_evaluations_compared"] = 400 + 1024 + len(ff) * len(vectors)
 
-    # Reproduce defects explicitly; these are observations, not passing features.
-    for flag in ("--fault-list", "--truth-table", "--input"):
-        extra = (flag, "a=0") if flag == "--input" else (flag,)
-        run = run_cli("hw1.bench", "", "issue_cli_" + flag[2:], extra, 2)
-        compare("unrecognized arguments" in run.stderr, True, "stale README flag")
-    for tag, stdin in [("issue_eof_menu", ""), ("issue_eof_fault_id", "3\n011\n")]:
-        run = run_cli("hw1.bench", stdin, tag, expected_code=1)
-        compare("EOFError" in run.stderr, True, tag)
-    run = run_cli("c6288.bench", "2\n0x00050007\n" + format(0x50007, "032b") + "\n5\n",
-                  "issue_hex_input")
-    compare("Enter exactly 32 bits" in run.stdout, True, "hex rejected")
+    # Exercise repaired interfaces and error handling as user-visible behavior.
+    run_cli("hw1.bench", "", "check_cli_fault_list", ("--fault-list",))
+    run = run_cli("hw1.bench", "", "check_cli_truth_table", ("--truth-table",))
+    compare(len(re.findall(r"^[01] [01] [01] \|", run.stdout, re.MULTILINE)), 8, "truth rows")
+    run = run_cli("hw1.bench", "", "check_cli_assignments",
+                  ("--input", "a=0", "--input", "b=1", "--input", "c=1"))
+    compare("  x = 1" in run.stdout and "  y = 0" in run.stdout, True, "named inputs")
+    for tag, stdin in [("menu", ""), ("vector", "2\n"), ("fault_id", "3\n011\n"),
+                       ("random_count", "6\n"), ("random_seed", "6\n10\n")]:
+        run = run_cli("hw1.bench", stdin, "check_eof_" + tag)
+        compare("Traceback" not in run.stderr and "Input closed" in run.stdout, True, tag)
+    run = run_cli("c6288.bench", "", "check_hex_trace",
+                  ("--vector", "0x00050007", "--trace"))
+    compare(len(re.findall(r"^\s*\d+ \|", run.stdout, re.MULTILINE)), 2416, "CLI trace rows")
+    run = run_cli("c17.bench", "", "check_named_fault_cli",
+                  ("--vector", "00000", "--fault", "22-10-0"))
+    compare("Result: DETECTED" in run.stdout, True, "CLI named fault")
+    run = run_cli("hw1.bench", "", "check_all_fault_rows", ("--vector", "011", "--all-faults"))
+    compare(len(re.findall(r"^\[\d+\] .+: (?:NOT )?DETECTED$", run.stdout, re.MULTILINE)),
+            len(hf), "one identifiable row for every fault")
+    compare(": NOT DETECTED" in run.stdout, True, "undetected rows visible")
+    run = run_cli("c432.bench", "", "check_random_batch", ("--random", "10", "--seed", "464"))
+    compare([int(n) for n in re.findall(r"Faults Detected:\s+(\d+)", run.stdout)],
+            [row["detected"] for row in data["assignment"]["c432_vectors"][1:]], "seeded CLI counts")
+    run = run_cli("hw1.bench", "", "check_full_list", ("--fault-list", "--fault-model", "full"))
+    compare("Full Pin Fault List" in run.stdout, True, "full list label")
+    run = run_cli("hw1.bench", "", "check_named_y0", ("--vector", "011", "--fault", "y-0"))
+    compare("Result: NOT DETECTED" in run.stdout, True, "named y-0")
+    run = run_cli("hw1.bench", "", "check_named_y1", ("--vector", "011", "--fault", "y-1"))
+    compare("Result: DETECTED" in run.stdout, True, "named y-1")
+    run = run_cli("c432.bench", "", "check_c432_hex_cli",
+                  ("--vector", "0xABCD1234", "--all-faults", "--summary-only"))
+    compare([int(n) for n in re.findall(r"Faults Detected:\s+(\d+)", run.stdout)], [47], "prescribed hex CLI")
+    run = run_cli("hw1.bench", "", "check_full_simulation",
+                  ("--vector", "011", "--all-faults", "--fault-model", "full", "--summary-only"))
+    compare([int(n) for n in re.findall(r"Faults Detected:\s+(\d+)", run.stdout)],
+            [data["assignment"]["hw1_011"]["full_detected"]], "full simulation CLI")
+    run = run_cli("c432.bench", "6\n2\n464\n5\n", "check_random_menu")
+    compare([int(n) for n in re.findall(r"Faults Detected:\s+(\d+)", run.stdout)], [42, 25], "random menu")
+    compare(project.parse_vector(hw, "0x3"), project.parse_vector(hw, "011"), "short hex pad")
+    compare(project.parse_vector(hw, "0x3", "lsb-first"), project.parse_vector(hw, "110"), "hex reverse")
+    compare(project.parse_vector(hw, "011", "lsb-first"), project.parse_vector(hw, "011"), "binary order stable")
+    for text in ("0x8", "0x-1", "0x", "0xG", "01", "012"):
+        try:
+            project.parse_vector(hw, text)
+        except ValueError:
+            data["comparisons"] += 1
+        else:
+            raise AssertionError("Invalid vector accepted: " + text)
+    for text in ("99", "unknown-0", "x-a-0", "a-b-0", "y-2"):
+        try:
+            project.resolve_fault(hw, text, hf)
+        except ValueError:
+            data["comparisons"] += 1
+        else:
+            raise AssertionError("Invalid fault accepted: " + text)
+    for tv in ({}, {hw.inputs[0]: 0}, {node: 2 for node in hw.inputs},
+               {**dict.fromkeys(hw.inputs, 0), hw.node_to_id["x"]: 0}):
+        try:
+            project.evaluate_circuit(hw, tv)
+        except ValueError:
+            data["comparisons"] += 1
+        else:
+            raise AssertionError("Invalid input mapping accepted")
+    for tag, name, extra in [
+        ("overflow", "hw1.bench", ("--vector", "0x8")),
+        ("missing_input", "hw1.bench", ("--input", "a=0")),
+        ("duplicate_input", "hw1.bench", ("--input", "a=0", "--input", "a=1")),
+        ("bad_fault", "c17.bench", ("--vector", "00000", "--fault", "22-99-0")),
+        ("big_truth_table", "c432.bench", ("--truth-table",)),
+        ("bad_random_count", "c432.bench", ("--random", "0")),
+    ]:
+        run = run_cli(name, "", "check_error_" + tag, extra, 2)
+        compare("Traceback" not in run.stderr, True, tag)
 
     with tempfile.TemporaryDirectory(prefix="bench_review_", dir=HERE) as tmp:
         path = Path(tmp) / "case.bench"
@@ -293,6 +402,9 @@ def main():
             "duplicate_gate": "INPUT(a)\nx=NOT(a)\nx=BUFF(a)\nOUTPUT(x)\n",
             "bad_unary_arity": "INPUT(a)\nINPUT(b)\nx=NOT(a,b)\nOUTPUT(x)\n",
             "unsupported_gate": "INPUT(a)\nx=UNKNOWN(a)\nOUTPUT(x)\n",
+            "gate_before_input_multiple_driver": "x=NOT(a)\nINPUT(x)\nINPUT(a)\nOUTPUT(x)\n",
+            "empty_gate_pin": "INPUT(a)\nINPUT(b)\nx=AND(a,,b)\nOUTPUT(x)\n",
+            "empty_circuit": "# empty\n",
         }
         for name, content in invalid.items():
             path.write_text(content, encoding="utf-8")
@@ -302,21 +414,13 @@ def main():
                 data["comparisons"] += 1
             else:
                 raise AssertionError("Should reject " + name)
-        for name, content in {
-            "gate_before_input_multiple_driver": "x=NOT(a)\nINPUT(x)\nINPUT(a)\nOUTPUT(x)\n",
-            "empty_gate_pin": "INPUT(a)\nINPUT(b)\nx=AND(a,,b)\nOUTPUT(x)\n",
-            "empty_circuit": "# empty\n",
-        }.items():
-            path.write_text(content, encoding="utf-8")
-            project.parse_bench(path)
-            data["known_issues"].append({"name": name, "invalid_bench_accepted": content})
 
     compare(hashlib.sha256(SOURCE.read_bytes()).hexdigest(), before, "source unchanged")
     data["source_unchanged"] = True
-    (HERE / "results.json").write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-    print(f"PASS: {data['comparisons']} numerical/structural/reproduction checks; "
+    (HERE / "results.json").write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8", newline="\n")
+    print(f"PASS: {data['comparisons']} numerical, structural, and interface checks; "
           f"{len(data['benchmarks'])} benchmarks.")
-    print("Known defects are reproduced separately; this is not assignment sign-off.")
+    print("All regression checks passed. Hand-work and screenshot deliverables are separate.")
     print(f"Results and transcripts: {HERE}")
 
 

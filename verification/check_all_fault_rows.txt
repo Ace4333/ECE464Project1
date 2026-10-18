@@ -1,0 +1,73 @@
+BENCH: hw1.bench
+Arguments: ['--vector', '011', '--all-faults']
+Input supplied to menu:
+
+Exit code: 0
+STDOUT:
+
+--- Project 1 Circuit Summary ---
+Inputs  (3): a, b, c
+Outputs (4): w, x, y, z
+Gates   (12)
+Fault model: collapsed pins (50 entries)
+Hex mapping: msb-first; binary follows input declaration order
+Input vector (declaration order): 011
+Good Machine Output: {'w': 0, 'x': 1, 'y': 0, 'z': 0}
+[0] a-0 (primary input stem): NOT DETECTED
+[1] a-1 (primary input stem): DETECTED
+[2] b-0 (primary input stem): DETECTED
+[3] b-1 (primary input stem): NOT DETECTED
+[4] c-0 (primary input stem): DETECTED
+[5] c-1 (primary input stem): NOT DETECTED
+[6] a'-0 (gate output): DETECTED
+[7] a'-1 (gate output): NOT DETECTED
+[8] b'-0 (gate output): NOT DETECTED
+[9] b'-1 (gate output): DETECTED
+[10] c'-0 (gate output): NOT DETECTED
+[11] c'-1 (gate output): DETECTED
+[12] w-a-1 (gate input 1): DETECTED
+[13] w-b-1 (gate input 2): NOT DETECTED
+[14] w-c-1 (gate input 3): NOT DETECTED
+[15] w-0 (gate output): NOT DETECTED
+[16] z-0 (gate output): NOT DETECTED
+[17] z-1 (gate output): DETECTED
+[18] e-a'-1 (gate input 1): NOT DETECTED
+[19] e-b-1 (gate input 2): NOT DETECTED
+[20] e-c-1 (gate input 3): NOT DETECTED
+[21] e-0 (gate output): DETECTED
+[22] d-a-1 (gate input 1): NOT DETECTED
+[23] d-b'-1 (gate input 2): NOT DETECTED
+[24] d-0 (gate output): NOT DETECTED
+[25] g-b'-1 (gate input 1): DETECTED
+[26] g-c-1 (gate input 2): NOT DETECTED
+[27] g-0 (gate output): NOT DETECTED
+[28] f-a-1 (gate input 1): NOT DETECTED
+[29] f-b-1 (gate input 2): NOT DETECTED
+[30] f-c'-1 (gate input 3): NOT DETECTED
+[31] f-0 (gate output): NOT DETECTED
+[32] h-b-1 (gate input 1): NOT DETECTED
+[33] h-c'-1 (gate input 2): DETECTED
+[34] h-0 (gate output): NOT DETECTED
+[35] x-d-0 (gate input 1): NOT DETECTED
+[36] x-e-0 (gate input 2): DETECTED
+[37] x-f-0 (gate input 3): NOT DETECTED
+[38] x-1 (gate output): NOT DETECTED
+[39] y-g-0 (gate input 1): NOT DETECTED
+[40] y-h-0 (gate input 2): NOT DETECTED
+[41] y-1 (gate output): DETECTED
+[42] w-0 (primary output pin): NOT DETECTED
+[43] w-1 (primary output pin): DETECTED
+[44] x-0 (primary output pin): DETECTED
+[45] x-1 (primary output pin): NOT DETECTED
+[46] y-0 (primary output pin): NOT DETECTED
+[47] y-1 (primary output pin): DETECTED
+[48] z-0 (primary output pin): NOT DETECTED
+[49] z-1 (primary output pin): DETECTED
+
+--- Collapsed Pin Fault Simulation Summary ---
+Total Faults:     50
+Faults Detected:  17
+Fault Coverage:   34.00%
+(Completed in 0.00026s)
+
+STDERR:
