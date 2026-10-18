@@ -140,11 +140,7 @@ def parse_bench(file_path):
 
 
 def generate_faults(circuit, model="collapsed"):
-    """List pin faults, retaining the original local collapsing policy by default.
-
-    Full mode retains both polarities at every gate input/output and PI/PO port.
-    Separate ports and pins remain separate entries, even when equivalent.
-    """
+    """Generates a programmatic list of faults for simulation."""
     if model not in {"collapsed", "full"}:
         raise ValueError("Fault model must be 'collapsed' or 'full'")
     faults = []
@@ -376,9 +372,9 @@ def prompt_for_input_values(circuit, bit_order="msb-first"):
 
 
 def print_summary(circuit):
-    print("\n--- Project 1 Circuit Summary ---")
-    print(f"Inputs  ({len(circuit.inputs)}): {', '.join(circuit.get_name(i) for i in circuit.inputs)}")
-    print(f"Outputs ({len(circuit.outputs)}): {', '.join(circuit.get_name(i) for i in circuit.outputs)}")
+    print(f"\n--- Circuit Benchmark Summary ---")
+    print(f"Inputs  ({len(circuit.inputs)}): {', '.join([circuit.get_name(i) for i in circuit.inputs])}")
+    print(f"Outputs ({len(circuit.outputs)}): {', '.join([circuit.get_name(i) for i in circuit.outputs])}")
     print(f"Gates   ({len(circuit.gates)})")
 
 
@@ -474,7 +470,7 @@ def print_truth_table(circuit):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Project 1 circuit and stuck-at fault simulator")
+    parser = argparse.ArgumentParser(description="Circuit and Fault Simulator")
     parser.add_argument("circuit_file", help="path to a .bench file")
     vectors = parser.add_mutually_exclusive_group()
     vectors.add_argument("--vector", help="binary in input declaration order, or a 0x hex word")
@@ -520,11 +516,11 @@ def main():
                 simulate(circuit, tv, args.trace)
         else:
             while True:
-                print("\n" + "=" * 40)
+                print("\n" + "="*40)
                 print("1. Fault listing")
-                print("2. Circuit simulation (with intermediate nodes)")
-                print("3. Fault simulation (single fault)")
-                print("4. Fault simulation (all faults)")
+                print("2. Circuit simulation")
+                print("3. Fault simulation (Single fault against TV)")
+                print("4. Fault simulation (All faults against TV)")
                 print("5. Exit")
                 print("6. Random vectors (all faults, summary)")
                 choice = input("Select an option (1-6): ").strip()
